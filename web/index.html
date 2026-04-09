@@ -298,16 +298,7 @@
     </footer>
   </div>
 
-  <script src="api-config.js"></script>
   <script>
-    function apiBase() {
-      if (typeof window !== "undefined" && window.__GUTSAFE_API__) {
-        const s = String(window.__GUTSAFE_API__).trim();
-        if (s) return s.replace(/\/$/, "");
-      }
-      return "";
-    }
-
     const $ = (id) => document.getElementById(id);
     const msg = $("msg");
     let html5Qr = null;
@@ -343,17 +334,25 @@
       showMsg("Loading product…", true);
       $("btnLookup").disabled = true;
       try {
-        const url = apiBase() + "/api/scan/" + encodeURIComponent(digits);
-        const res = await fetch(url);
+        const res = await fetch("/api/scan/" + encodeURIComponent(digits));
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           let det = data.detail;
           if (Array.isArray(det)) {
             det = det.map((x) => (typeof x === "string" ? x : x.msg || JSON.stringify(x))).join("; ");
           }
-          if (res.status === 404 && !det) {
-            det =
-              "404: Netlify only serves static files — there is no /api here. Deploy the FastAPI app (use the repo Dockerfile on Render), then set window.__GUTSAFE_API__ in api-config.js to your API HTTPS URL and redeploy.";
+          if (det && typeof det === "object") {
+            // FastAPI can return structured error objects in `detail`
+            const msg = det.message || det.error || det.msg;
+            if (msg) {
+              const parts = [String(msg)];
+              if (det.open_food_facts) parts.push("Open Food Facts: " + det.open_food_facts);
+              if (det.usda_fdc) parts.push("USDA FDC: " + det.usda_fdc);
+              if (det.smartlabel) parts.push("SmartLabel: " + det.smartlabel);
+              det = parts.join(" | ");
+            } else {
+              det = JSON.stringify(det);
+            }
           }
           showMsg(det || ("Error " + res.status), false);
           return;

@@ -1,0 +1,11 @@
+product_id,product_name,sucralose,aspartame,stevia,polysorbate80,cmc,red40,polysorbate60,carrageenan,titanium_dioxide,msg,potassium_sorbate,sodium_benzoate,sodium_nitrite,phosphoric_acid,citric_acid,xylitol,sorbitol,maltitol,tartrazine,saccharin,acesulfame_k,guar_gum,xanthan_gum,propylene_glycol
+sample_1,Diet soda A,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0
+sample_2,Protein bar B,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0
+sample_3,Stevia drops C,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0
+sample_4,Ice cream D,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1
+sample_5,Plain oats E,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sample_6,Candy F,1,1,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sample_7,Yogurt drink G,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sample_8,Sports drink H,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0
+sample_9,Plant milk I,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+sample_10,Jerky J,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0

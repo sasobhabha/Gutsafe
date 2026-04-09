@@ -1,0 +1,6 @@
+# Optional: proxy /api on Netlify to your FastAPI host (same-origin fetch, no CORS issues).
+# Replace YOUR_API_HOST with your real HTTPS origin (no path, no trailing slash), then uncomment:
+#
+# /api/*  https://YOUR_API_HOST/api/:splat  200
+#
+# If you use window.__GUTSAFE_API__ in api-config.js instead, leave this file with no active rules.

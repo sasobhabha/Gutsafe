@@ -1,0 +1,48 @@
+{
+  "n_train": 8,
+  "n_test": 2,
+  "r2_per_target": {
+    "bifido_delta": -2.451845563528095,
+    "lacto_delta": -2.067109233588832,
+    "akkermansia_delta": -5.85446432313476,
+    "enterobacteriaceae_delta": -27.541141660038317,
+    "diversity_delta": -3.4780283860146133,
+    "scfa_delta": -6.379122976644966,
+    "barrier_risk": -4.844436289699782
+  },
+  "mae_per_target": {
+    "bifido_delta": 0.5420429319084749,
+    "lacto_delta": 0.4829880481468782,
+    "akkermansia_delta": 0.1695463068511563,
+    "enterobacteriaceae_delta": 0.3677626769889826,
+    "diversity_delta": 0.5326907291219384,
+    "scfa_delta": 0.3287938402945237,
+    "barrier_risk": 1.0820008976927626
+  },
+  "feature_columns": [
+    "sucralose",
+    "aspartame",
+    "stevia",
+    "polysorbate80",
+    "cmc",
+    "red40",
+    "polysorbate60",
+    "carrageenan",
+    "titanium_dioxide",
+    "msg",
+    "potassium_sorbate",
+    "sodium_benzoate",
+    "sodium_nitrite",
+    "phosphoric_acid",
+    "citric_acid",
+    "xylitol",
+    "sorbitol",
+    "maltitol",
+    "tartrazine",
+    "saccharin",
+    "acesulfame_k",
+    "guar_gum",
+    "xanthan_gum",
+    "propylene_glycol"
+  ]
+}

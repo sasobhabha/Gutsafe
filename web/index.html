@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GutSafety AI — Barcode scan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <style>
+    :root {
+      --bg: #0f1714;
+      --bg-card: #16221d;
+      --border: #2a3d34;
+      --text: #e8f0eb;
+      --muted: #8fa89a;
+      --accent: #5ecf8a;
+      --accent-dim: #3a9a5f;
+      --warn: #e8b86d;
+      --danger: #e07a7a;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2e26 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    header {
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 42rem;
+    }
+    .grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+    @media (min-width: 800px) {
+      .grid { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+    }
+    .card h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.1rem;
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0c120f;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    input:focus { outline: 2px solid var(--accent-dim); outline-offset: 2px; }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 0.85rem;
+    }
+    button {
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.1rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      color: #051208;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    #reader {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      min-height: 220px;
+      background: #0a0f0d;
+    }
+    #reader video { border-radius: var(--radius); }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; }
+    .status {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .status.err { display: block; background: rgba(224, 122, 122, 0.12); border: 1px solid rgba(224, 122, 122, 0.35); color: #f0c4c4; }
+    .status.ok { display: block; background: rgba(94, 207, 138, 0.1); border: 1px solid rgba(94, 207, 138, 0.35); color: #c8f5d8; }
+    .results { margin-top: 1.5rem; }
+    .results h2 { font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; margin: 0 0 1rem; }
+    .product-head {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .product-head img {
+      width: 96px; height: 96px; object-fit: contain;
+      border-radius: 12px; background: #fff; padding: 4px;
+    }
+    .score-ring {
+      --p: 50;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--border) 0);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .score-ring::after {
+      content: "";
+      width: 108px; height: 108px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      position: absolute;
+    }
+    .score-ring span {
+      position: relative;
+      z-index: 1;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .score-label { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 0.35rem; }
+    .warn-banner {
+      margin: 1rem 0;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      background: rgba(232, 184, 109, 0.12);
+      border: 1px solid rgba(232, 184, 109, 0.35);
+      color: #f5e0bc;
+      font-size: 0.9rem;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0; }
+    .chip {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: #222f28;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .chip.on { background: rgba(224, 122, 122, 0.15); border-color: rgba(224, 122, 122, 0.45); color: #f0bfbf; }
+    .fx-grid {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+    }
+    .fx-row {
+      display: flex; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 0.55rem;
+      border-radius: 8px;
+      background: #0c120f;
+      border: 1px solid var(--border);
+    }
+    .fx-row span:last-child { font-variant-numeric: tabular-nums; color: var(--accent); }
+    details.ingredients {
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      background: #0c120f;
+    }
+    details.ingredients summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    details.ingredients pre {
+      margin: 0.75rem 0 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      max-width: 40rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>GutSafety AI</h1>
+      <p>
+        Scan a barcode to pull label ingredients from <strong>Open Food Facts</strong> (global),
+        <strong>USDA FoodData Central — Branded</strong> (strong U.S. coverage), and optionally
+        <strong>SmartLabel®</strong> (Label Insight product API for participating brands), merge the best list,
+        then score curated additives with the GutSafety model (higher = friendlier to beneficial bacteria).
+      </p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Enter barcode</h2>
+        <label for="barcode">GTIN / EAN / UPC (digits only is fine)</label>
+        <input type="text" id="barcode" placeholder="e.g. 3017620422003" autocomplete="off" inputmode="numeric" />
+        <div class="row">
+          <button type="button" class="btn-primary" id="btnLookup">Look up &amp; score</button>
+        </div>
+        <div id="msg" class="status" role="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>Scan with camera</h2>
+        <div id="reader" aria-label="Barcode camera view"></div>
+        <div class="row">
+          <button type="button" class="btn-primary" id="btnStartCam">Start camera</button>
+          <button type="button" class="btn-ghost" id="btnStopCam" disabled>Stop</button>
+        </div>
+        <p class="hint">Uses your device camera. Works best in good light on 1D barcodes (EAN-13, UPC). Requires HTTPS or localhost.</p>
+      </div>
+    </div>
+
+    <section class="results card" id="results" hidden>
+      <h2 id="resTitle">Result</h2>
+      <div id="warnBox" class="warn-banner" hidden></div>
+      <div class="product-head">
+        <img id="resImg" alt="" hidden />
+        <div>
+          <p id="resName" style="margin:0;font-weight:700;font-size:1.05rem;"></p>
+          <p id="resBrands" style="margin:0.25rem 0 0;color:var(--muted);font-size:0.9rem;"></p>
+          <p id="resBarcode" style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--muted);"></p>
+          <p id="resSources" style="margin:0.35rem 0 0;font-size:0.78rem;color:var(--accent-dim);"></p>
+          <p id="resCategory" style="margin:0.2rem 0 0;font-size:0.78rem;color:var(--muted);" hidden></p>
+          <p id="resBasis" style="margin:0.35rem 0 0;font-size:0.75rem;color:var(--muted);"></p>
+        </div>
+        <div style="margin-left:auto;text-align:center;">
+          <div class="score-ring" id="scoreRing"><span id="scoreVal">—</span></div>
+          <div class="score-label">Gut wellbeing index<br />(0–100, higher is better)</div>
+          <p id="resStress" style="margin:0.5rem 0 0;font-size:0.72rem;color:var(--muted);"></p>
+        </div>
+      </div>
+
+      <p style="margin:1rem 0 0;font-size:0.85rem;color:var(--muted);">Flagged additives in our database</p>
+      <div class="chips" id="chips"></div>
+
+      <h3 style="font-size:1rem;margin:1.25rem 0 0;font-family:Fraunces,serif;">Estimated microbiome shifts (literature aggregation)</h3>
+      <div class="fx-grid" id="fxLit"></div>
+
+      <details class="ingredients">
+        <summary>Ingredients text used for scoring (longest / best available)</summary>
+        <pre id="resIngr"></pre>
+      </details>
+      <details class="ingredients" id="srcBreakdown" hidden>
+        <summary>Raw ingredient text by database</summary>
+        <pre id="resIngrBySrc"></pre>
+      </details>
+    </section>
+
+    <footer>
+      Educational prototype — not medical advice.       Ingredient data: Open Food Facts contributors (ODbL), U.S. USDA FoodData Central (public domain / CC0),
+      and optionally SmartLabel® via Label Insight (credentials required —
+      <a href="https://developers.labelinsight.com/reference/get-product-by-upc-resource" target="_blank" rel="noopener">Product API</a>).
+      Set <code>USDA_FDC_API_KEY</code> for full FDC limits; set <code>SMARTLABEL_API_KEY</code> and
+      <code>SMARTLABEL_CONFIGURATION_ID</code> for SmartLabel.
+    </footer>
+  </div>
+
+  <script src="api-config.js"></script>
+  <script>
+    function apiBase() {
+      if (typeof window !== "undefined" && window.__GUTSAFE_API__) {
+        const s = String(window.__GUTSAFE_API__).trim();
+        if (s) return s.replace(/\/$/, "");
+      }
+      return "";
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const msg = $("msg");
+    let html5Qr = null;
+    let scanning = false;
+
+    const FX_LABELS = {
+      bifido_delta: "Bifidobacterium (Δ)",
+      lacto_delta: "Lactobacillus (Δ)",
+      akkermansia_delta: "Akkermansia (Δ)",
+      enterobacteriaceae_delta: "Enterobacteriaceae (Δ)",
+      diversity_delta: "Diversity (Δ)",
+      scfa_delta: "SCFA / fermentation (Δ)",
+      barrier_risk: "Barrier disruption risk",
+    };
+
+    function showMsg(text, ok) {
+      msg.textContent = text;
+      msg.className = "status " + (ok ? "ok" : "err");
+    }
+
+    function hideMsg() {
+      msg.className = "status";
+      msg.textContent = "";
+    }
+
+    async function lookupBarcode(raw) {
+      const digits = (raw || "").replace(/\D/g, "");
+      if (digits.length < 8) {
+        showMsg("Enter at least 8 digits.", false);
+        return;
+      }
+      hideMsg();
+      showMsg("Loading product…", true);
+      $("btnLookup").disabled = true;
+      try {
+        const url = apiBase() + "/api/scan/" + encodeURIComponent(digits);
+        const res = await fetch(url);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          let det = data.detail;
+          if (Array.isArray(det)) {
+            det = det.map((x) => (typeof x === "string" ? x : x.msg || JSON.stringify(x))).join("; ");
+          }
+          if (res.status === 404 && !det) {
+            det =
+              "404: Netlify only serves static files — there is no /api here. Deploy the FastAPI app (use the repo Dockerfile on Render), then set window.__GUTSAFE_API__ in api-config.js to your API HTTPS URL and redeploy.";
+          }
+          showMsg(det || ("Error " + res.status), false);
+          return;
+        }
+        renderResult(data);
+        showMsg("Product loaded.", true);
+      } catch (e) {
+        showMsg("Network error — is the server running on this host?", false);
+      } finally {
+        $("btnLookup").disabled = false;
+      }
+    }
+
+    function renderResult(data) {
+      const sc = data.score || {};
+      const wb = sc.wellbeing_index_0_100 ?? 0;
+      const stress = sc.microbiome_stress_index_0_1;
+      const basis = sc.score_basis || "";
+      $("results").hidden = false;
+      $("resTitle").textContent = "Your score";
+      $("resName").textContent = data.product_name || "Unknown";
+      $("resBrands").textContent = data.brands || "";
+      $("resBarcode").textContent = "Barcode: " + (data.barcode || "");
+      const labs = (data.sources || []).map((s) => s.replace(/_/g, " "));
+      $("resSources").textContent = labs.length ? "Sources: " + labs.join(" · ") : "";
+      const cat = $("resCategory");
+      if (data.category) {
+        cat.hidden = false;
+        cat.textContent = "Category (USDA): " + data.category;
+      } else {
+        cat.hidden = true;
+      }
+      const img = $("resImg");
+      if (data.image_url) {
+        img.src = data.image_url;
+        img.hidden = false;
+        img.alt = data.product_name || "Product";
+      } else {
+        img.hidden = true;
+      }
+      $("scoreVal").textContent = String(wb);
+      const ring = $("scoreRing");
+      ring.style.setProperty("--p", Math.max(0, Math.min(100, wb)));
+      const rb = $("resBasis");
+      if (basis === "no_ingredient_text") {
+        rb.textContent = "Score basis: no ingredient list (baseline when nothing to score).";
+      } else if (basis === "full_ingredients_additives_lexicon") {
+        rb.textContent = "Score basis: full ingredient text — additives database + food lexicon + list-length signal.";
+      } else {
+        rb.textContent = "Score basis: " + (basis || "literature model").replace(/_/g, " ");
+      }
+      const rs = $("resStress");
+      if (stress != null && stress !== undefined && basis !== "no_ingredient_text") {
+        rs.textContent =
+          "Normalized stress (0–1): " +
+          Number(stress).toFixed(3) +
+          " — health = (1 − stress) × 100";
+      } else {
+        rs.textContent = "";
+      }
+
+      const warn = $("warnBox");
+      if (data.warning) {
+        warn.hidden = false;
+        warn.textContent = data.warning;
+      } else {
+        warn.hidden = true;
+      }
+
+      const flags = sc.additive_flags || {};
+      const chips = $("chips");
+      chips.innerHTML = "";
+      Object.keys(flags).sort().forEach((k) => {
+        const el = document.createElement("span");
+        el.className = "chip" + (flags[k] ? " on" : "");
+        el.textContent = k.replace(/_/g, " ") + (flags[k] ? " · detected" : " · not detected");
+        chips.appendChild(el);
+      });
+
+      const lit = sc.literature_aggregated_effects || {};
+      const fx = $("fxLit");
+      fx.innerHTML = "";
+      Object.keys(FX_LABELS).forEach((k) => {
+        const row = document.createElement("div");
+        row.className = "fx-row";
+        row.innerHTML = "<span>" + FX_LABELS[k] + "</span><span>" + (lit[k] != null ? Number(lit[k]).toFixed(2) : "—") + "</span>";
+        fx.appendChild(row);
+      });
+
+      $("resIngr").textContent = data.ingredients_text || "(empty)";
+
+      const by = data.ingredients_by_source || {};
+      const blocks = [];
+      if (by.open_food_facts) {
+        blocks.push("— Open Food Facts —\n" + by.open_food_facts);
+      }
+      if (by.usda_fdc) {
+        blocks.push("— USDA FoodData Central (Branded) —\n" + by.usda_fdc);
+      }
+      if (by.smartlabel) {
+        blocks.push("— SmartLabel (Label Insight) —\n" + by.smartlabel);
+      }
+      const bd = $("srcBreakdown");
+      const pre = $("resIngrBySrc");
+      if (blocks.length) {
+        bd.hidden = false;
+        pre.textContent = blocks.join("\n\n");
+      } else {
+        bd.hidden = true;
+        pre.textContent = "";
+      }
+    }
+
+    $("btnLookup").addEventListener("click", () => lookupBarcode($("barcode").value));
+    $("barcode").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") lookupBarcode($("barcode").value);
+    });
+
+    $("btnStartCam").addEventListener("click", async () => {
+      if (!window.Html5Qrcode) {
+        showMsg("Scanner library not loaded yet. Refresh the page.", false);
+        return;
+      }
+      if (scanning) return;
+      const region = { width: 280, height: 160 };
+      html5Qr = new Html5Qrcode("reader");
+      $("btnStartCam").disabled = true;
+      hideMsg();
+      try {
+        await html5Qr.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: region, aspectRatio: 1.777 },
+          (text) => {
+            const d = text.replace(/\D/g, "");
+            if (d.length >= 8) {
+              $("barcode").value = d;
+              lookupBarcode(d);
+              stopCam();
+            }
+          },
+          () => {}
+        );
+        scanning = true;
+        $("btnStopCam").disabled = false;
+      } catch (e) {
+        showMsg("Camera blocked or unavailable: " + (e.message || e), false);
+        $("btnStartCam").disabled = false;
+      }
+    });
+
+    function stopCam() {
+      if (!html5Qr || !scanning) {
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+        return;
+      }
+      $("btnStopCam").disabled = true;
+      html5Qr.stop().then(() => {
+        scanning = false;
+        html5Qr.clear();
+        html5Qr = null;
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+      }).catch(() => {
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+      });
+    }
+
+    $("btnStopCam").addEventListener("click", stopCam);
+
+    window.addEventListener("load", () => {
+      hideMsg();
+    });
+  </script>
+</body>
+</html>

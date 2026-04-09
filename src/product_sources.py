@@ -1,0 +1,310 @@
+"""
+Multi-source product lookup for barcode → ingredients.
+
+- Open Food Facts: global, crowdsourced (https://openfoodfacts.github.io/openfoodfacts-server/api/)
+- USDA FoodData Central: Global Branded Foods / SR Legacy API (https://fdc.nal.usda.gov/api-guide.html)
+  Use a free API key: set USDA_FDC_API_KEY in the environment (DEMO_KEY works for light testing).
+- SmartLabel® (Label Insight Products API): digital disclosure data served by Label Insight for participating
+  brands (https://www.smartlabel.org/). UPC lookup:
+  GET https://api.labelinsight.com/products/v1/{configurationId}/upc/{upc}
+  Requires SMARTLABEL_API_KEY + SMARTLABEL_CONFIGURATION_ID from Label Insight / SmartLabel onboarding
+  (https://developers.labelinsight.com/reference/get-product-by-upc-resource).
+"""
+
+from __future__ import annotations
+
+import os
+import re
+from typing import Any
+
+import requests
+
+OFF_PRODUCT = "https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+OFF_HEADERS = {
+    "User-Agent": "GutSafetyAI/1.0 (Open Food Facts; ingredient lookup)",
+    "Accept": "application/json",
+}
+
+FDC_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search"
+FDC_FOOD = "https://api.nal.usda.gov/fdc/v1/food/{fdc_id}"
+
+# SmartLabel / Label Insight — Products API v1 (ingredients.declaration)
+LABEL_INSIGHT_PRODUCT = "https://api.labelinsight.com/products/v1/{configuration_id}/upc/{upc}"
+
+
+def _digits(s: str) -> str:
+    return re.sub(r"\D", "", s or "")
+
+
+def _core_barcode(d: str) -> str:
+    d = _digits(d)
+    c = d.lstrip("0")
+    return c if c else "0"
+
+
+def barcode_matches(candidate_gtin: str | None, requested_barcode: str) -> bool:
+    """Loose GTIN match (handles 12-digit UPC vs 13-digit EAN padding)."""
+    if not candidate_gtin:
+        return False
+    a = _core_barcode(candidate_gtin)
+    b = _core_barcode(requested_barcode)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    if len(a) >= 8 and len(b) >= 8 and (a.endswith(b) or b.endswith(a)):
+        return True
+    return False
+
+
+def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
+    url = OFF_PRODUCT.format(barcode=barcode)
+    r = requests.get(url, timeout=20, headers=OFF_HEADERS)
+    r.raise_for_status()
+    payload = r.json()
+    if payload.get("status") != 1 or not payload.get("product"):
+        return None
+    p = payload["product"]
+    return {
+        "source": "open_food_facts",
+        "product_name": p.get("product_name") or p.get("product_name_en") or "",
+        "brands": p.get("brands") or "",
+        "ingredients_text": (p.get("ingredients_text") or p.get("ingredients_text_en") or "").strip(),
+        "image_url": p.get("image_front_url") or p.get("image_front_small_url") or "",
+        "raw": p,
+    }
+
+
+def _fdc_api_key() -> str | None:
+    return (os.environ.get("USDA_FDC_API_KEY") or os.environ.get("FDC_API_KEY") or "").strip() or None
+
+
+def _smartlabel_credentials() -> tuple[str | None, str | None]:
+    key = (os.environ.get("SMARTLABEL_API_KEY") or os.environ.get("LABEL_INSIGHT_API_KEY") or "").strip() or None
+    cid = (
+        os.environ.get("SMARTLABEL_CONFIGURATION_ID")
+        or os.environ.get("LABEL_INSIGHT_CONFIGURATION_ID")
+        or ""
+    ).strip() or None
+    return key, cid
+
+
+def smartlabel_configured() -> bool:
+    k, c = _smartlabel_credentials()
+    return bool(k and c)
+
+
+def fetch_smartlabel_label_insight(barcode: str) -> dict[str, Any] | None:
+    """
+    Label Insight Products API — powers SmartLabel® digital pages for many CPG brands.
+    Returns None if credentials unset, product not found (404), or forbidden (403).
+    """
+    key, cid = _smartlabel_credentials()
+    if not key or not cid:
+        return None
+    url = LABEL_INSIGHT_PRODUCT.format(configuration_id=cid, upc=barcode)
+    r = requests.get(
+        url,
+        timeout=25,
+        headers={
+            "X-API-KEY": key,
+            "Accept": "application/json",
+            "User-Agent": "GutSafetyAI/1.0 (SmartLabel/Label Insight product lookup)",
+        },
+    )
+    if r.status_code in (403, 404):
+        return None
+    r.raise_for_status()
+    data = r.json()
+    ing = data.get("ingredients") or {}
+    decl = (ing.get("declaration") or "").strip()
+    symbols = ing.get("symbols") or []
+    footnotes: list[str] = []
+    if isinstance(symbols, list):
+        footnotes = [str(s).strip() for s in symbols if s]
+    full = decl
+    if footnotes:
+        full = (decl + "\n\n" + "\n".join(footnotes)).strip() if decl else "\n".join(footnotes)
+
+    cat = ""
+    cg = data.get("categorization")
+    if isinstance(cg, dict):
+        cat = (cg.get("category") or cg.get("shelf") or "").strip()
+
+    return {
+        "source": "smartlabel",
+        "product_name": (data.get("productTitle") or "").strip(),
+        "brands": (data.get("brand") or "").strip(),
+        "sub_brand": (data.get("subBrand") or "").strip(),
+        "category": cat,
+        "ingredients_text": full,
+        "allergen_advisory": (data.get("warning") or "").strip(),
+        "upc": (data.get("upc") or "").strip(),
+        "image_url": "",
+        "raw": data,
+    }
+
+
+def fetch_usda_fdc_branded(barcode: str, api_key: str | None) -> dict[str, Any] | None:
+    """
+    Search Branded foods by GTIN-like query, then fetch full food record for ingredient text.
+    """
+    key = api_key or _fdc_api_key() or "DEMO_KEY"
+    params = {"api_key": key}
+    body = {
+        "query": barcode,
+        "pageSize": 15,
+        "dataType": ["Branded"],
+    }
+    r = requests.post(FDC_SEARCH, params=params, json=body, timeout=25)
+    r.raise_for_status()
+    data = r.json()
+    foods = data.get("foods") or []
+    hit: dict[str, Any] | None = None
+    for f in foods:
+        if barcode_matches(f.get("gtinUpc"), barcode):
+            hit = f
+            break
+    if hit is None:
+        return None
+
+    fdc_id = hit.get("fdcId")
+    if not fdc_id:
+        return None
+
+    fr = requests.get(FDC_FOOD.format(fdc_id=fdc_id), params={"api_key": key}, timeout=25)
+    fr.raise_for_status()
+    detail = fr.json()
+    ing = (detail.get("ingredients") or "").strip()
+    name = detail.get("description") or hit.get("description") or ""
+    brand = detail.get("brandOwner") or detail.get("brandName") or ""
+    cats = detail.get("foodCategory") or {}
+    cat_label = ""
+    if isinstance(cats, dict):
+        cat_label = cats.get("label") or ""
+
+    return {
+        "source": "usda_fdc",
+        "fdc_id": fdc_id,
+        "product_name": name,
+        "brands": brand,
+        "category": cat_label,
+        "ingredients_text": ing,
+        "gtin_upc": (hit.get("gtinUpc") or "").strip(),
+        "image_url": "",
+        "raw": detail,
+    }
+
+
+def _pick_ingredients(
+    off: dict[str, Any] | None,
+    usda: dict[str, Any] | None,
+    smartlabel: dict[str, Any] | None,
+) -> tuple[str, str | None]:
+    """
+    Choose best ingredient string: prefer longest non-empty; break ties SmartLabel > USDA > OFF.
+    Returns (chosen_text, secondary_note).
+    """
+    candidates: list[tuple[str, str]] = []
+    for label, d in (
+        ("open_food_facts", off),
+        ("usda_fdc", usda),
+        ("smartlabel", smartlabel),
+    ):
+        if not d:
+            continue
+        t = (d.get("ingredients_text") or "").strip()
+        if t:
+            candidates.append((t, label))
+    if not candidates:
+        return "", None
+
+    priority = {"smartlabel": 0, "usda_fdc": 1, "open_food_facts": 2}
+    best = max(candidates, key=lambda x: (len(x[0]), -priority.get(x[1], 9)))
+    chosen_text, src = best
+    note: str | None = None
+    if len(candidates) > 1:
+        longest = max(len(c[0]) for c in candidates)
+        winners = [c for c in candidates if len(c[0]) == longest]
+        if len(winners) == 1:
+            wsrc = winners[0][1]
+            pretty = wsrc.replace("_", " ")
+            note = f"{pretty} ingredient list was longest; used for scoring."
+        elif len(winners) > 1:
+            pretty = src.replace("_", " ")
+            note = f"Tied length across sources; preferred {pretty} (SmartLabel > USDA > Open Food Facts)."
+    return chosen_text, note
+
+
+def merge_product(
+    barcode: str,
+    off: dict[str, Any] | None,
+    usda: dict[str, Any] | None,
+    smartlabel: dict[str, Any] | None,
+) -> dict[str, Any]:
+    sources: list[str] = []
+    if off:
+        sources.append("open_food_facts")
+    if usda:
+        sources.append("usda_fdc")
+    if smartlabel:
+        sources.append("smartlabel")
+
+    ing, ing_note = _pick_ingredients(off, usda, smartlabel)
+
+    name = ""
+    brands = ""
+    image = ""
+    if off:
+        name = off.get("product_name") or name
+        brands = off.get("brands") or brands
+        image = off.get("image_url") or image
+    if usda:
+        if not name:
+            name = usda.get("product_name") or ""
+        if not brands:
+            brands = usda.get("brands") or ""
+    if smartlabel:
+        if not name:
+            name = smartlabel.get("product_name") or ""
+        if not brands:
+            brands = smartlabel.get("brands") or ""
+
+    warnings: list[str] = []
+    if ing_note:
+        warnings.append(ing_note)
+    if not ing.strip():
+        warnings.append(
+            "No ingredient list from Open Food Facts, USDA, or SmartLabel — score reflects empty label (not real risk)."
+        )
+
+    category = (usda or {}).get("category") or ""
+    if smartlabel and (smartlabel.get("category") or "").strip():
+        if category:
+            category = f"{category}; {smartlabel['category']}"
+        else:
+            category = (smartlabel.get("category") or "").strip()
+
+    adv: list[str] = []
+    if smartlabel and (smartlabel.get("allergen_advisory") or "").strip():
+        adv.append(smartlabel["allergen_advisory"])
+
+    return {
+        "barcode": barcode,
+        "sources": sources,
+        "product_name": name or "Unknown product",
+        "brands": brands or "",
+        "category": category,
+        "image_url": image,
+        "ingredients_text": ing,
+        "ingredients_by_source": {
+            "open_food_facts": (off or {}).get("ingredients_text") or "",
+            "usda_fdc": (usda or {}).get("ingredients_text") or "",
+            "smartlabel": (smartlabel or {}).get("ingredients_text") or "",
+        },
+        "usda_fdc_id": (usda or {}).get("fdc_id"),
+        "usda_gtin_upc": (usda or {}).get("gtin_upc"),
+        "smartlabel_upc": (smartlabel or {}).get("upc"),
+        "smartlabel_allergen_advisory": " ".join(adv) if adv else "",
+        "warnings": warnings,
+    }

@@ -1,0 +1,10 @@
+# Render.com Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: gutsafe-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: PYTHONPATH
+        value: /app/src

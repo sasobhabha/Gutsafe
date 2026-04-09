@@ -49,7 +49,7 @@ def normalize_barcode(barcode: str) -> str:
 
 @app.get("/api/health")
 def health() -> dict:
-    has_usda = bool((os.environ.get("USDA_FDC_API_KEY") or os.environ.get("FDC_API_KEY") or "").strip())
+    has_usda = True
     return {
         "ok": True,
         "service": "gutsafety",
@@ -60,7 +60,7 @@ def health() -> dict:
         ],
         "usda_fdc_api_key_configured": has_usda,
         "smartlabel_label_insight_configured": smartlabel_configured(),
-        "usda_note": "Set USDA_FDC_API_KEY for full FDC rate limits; DEMO_KEY works for light testing only.",
+        "usda_note": "USDA key is embedded in code (env override disabled).",
         "smartlabel_note": "Set SMARTLABEL_API_KEY + SMARTLABEL_CONFIGURATION_ID (Label Insight / SmartLabel).",
     }
 
@@ -101,13 +101,24 @@ def scan_barcode(
         except requests.RequestException as e:
             sl_err = str(e)
 
-    # If upstreams are rate-limiting, return a temporary error instead of "not found".
-    rate_limited = ("rate limited" in (off_err or "").lower()) or ("rate limited" in (usda_err or "").lower())
-    if rate_limited and off is None and usda is None and sl is None:
+    # If upstreams are rate-limiting or unreachable, return a temporary error instead of "not found".
+    off_msg = (off_err or "").lower()
+    usda_msg = (usda_err or "").lower()
+    upstream_temp = (
+        ("rate limited" in off_msg)
+        or ("rate limited" in usda_msg)
+        or ("429" in usda_msg)
+        or ("connection refused" in off_msg)
+        or ("failed to establish a new connection" in off_msg)
+        or ("name or service not known" in off_msg)
+        or ("temporary failure in name resolution" in off_msg)
+        or ("timed out" in off_msg)
+    )
+    if upstream_temp and off is None and usda is None and sl is None:
         raise HTTPException(
             status_code=503,
             detail={
-                "message": "Upstream ingredient databases are rate limiting or temporarily unavailable.",
+                "message": "Upstream ingredient databases are temporarily unavailable (network/rate limit).",
                 "open_food_facts": off_err,
                 "usda_fdc": usda_err,
                 "smartlabel": "not configured" if not smartlabel_configured() else sl_err,

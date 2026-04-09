@@ -30,6 +30,9 @@ OFF_HEADERS = {
 FDC_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search"
 FDC_FOOD = "https://api.nal.usda.gov/fdc/v1/food/{fdc_id}"
 
+# Dummy fallback key (replace later). Prefer setting USDA_FDC_API_KEY in env.
+DEFAULT_USDA_FDC_API_KEY = "x65puQKmMmVBnHKE2CZ8CPWDpsgevJwxQP9DzsMK"
+
 # SmartLabel / Label Insight — Products API v1 (ingredients.declaration)
 LABEL_INSIGHT_PRODUCT = "https://api.labelinsight.com/products/v1/{configuration_id}/upc/{upc}"
 
@@ -103,7 +106,9 @@ def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
 
 
 def _fdc_api_key() -> str | None:
-    return (os.environ.get("USDA_FDC_API_KEY") or os.environ.get("FDC_API_KEY") or "").strip() or None
+    # Intentionally *do not* read from environment: per product requirement,
+    # the embedded dummy key is the only key used by the app.
+    return DEFAULT_USDA_FDC_API_KEY
 
 
 def _smartlabel_credentials() -> tuple[str | None, str | None]:

@@ -18,6 +18,8 @@ import re
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 OFF_PRODUCT = "https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
 OFF_HEADERS = {
@@ -30,6 +32,29 @@ FDC_FOOD = "https://api.nal.usda.gov/fdc/v1/food/{fdc_id}"
 
 # SmartLabel / Label Insight — Products API v1 (ingredients.declaration)
 LABEL_INSIGHT_PRODUCT = "https://api.labelinsight.com/products/v1/{configuration_id}/upc/{upc}"
+
+class UpstreamRateLimited(Exception):
+    """Raised when an upstream datasource rate-limits (HTTP 429)."""
+
+
+def _session() -> requests.Session:
+    """
+    Requests session with conservative retries for transient network errors.
+    (Not used to bypass rate limits; 429 is handled explicitly.)
+    """
+    s = requests.Session()
+    retry = Retry(
+        total=3,
+        connect=3,
+        read=3,
+        backoff_factor=0.5,
+        status_forcelist=[500, 502, 503, 504],
+        allowed_methods=["GET", "POST"],
+        raise_on_status=False,
+    )
+    s.mount("https://", HTTPAdapter(max_retries=retry))
+    s.mount("http://", HTTPAdapter(max_retries=retry))
+    return s
 
 
 def _digits(s: str) -> str:
@@ -59,7 +84,9 @@ def barcode_matches(candidate_gtin: str | None, requested_barcode: str) -> bool:
 
 def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
     url = OFF_PRODUCT.format(barcode=barcode)
-    r = requests.get(url, timeout=20, headers=OFF_HEADERS)
+    r = _session().get(url, timeout=20, headers=OFF_HEADERS)
+    if r.status_code == 429:
+        raise UpstreamRateLimited("Open Food Facts rate limited (HTTP 429). Try again later.")
     r.raise_for_status()
     payload = r.json()
     if payload.get("status") != 1 or not payload.get("product"):
@@ -156,7 +183,11 @@ def fetch_usda_fdc_branded(barcode: str, api_key: str | None) -> dict[str, Any] 
         "pageSize": 15,
         "dataType": ["Branded"],
     }
-    r = requests.post(FDC_SEARCH, params=params, json=body, timeout=25)
+    r = _session().post(FDC_SEARCH, params=params, json=body, timeout=25)
+    if r.status_code == 429:
+        raise UpstreamRateLimited(
+            "USDA FoodData Central rate limited (HTTP 429). Use a real USDA_FDC_API_KEY (not DEMO_KEY) or retry later."
+        )
     r.raise_for_status()
     data = r.json()
     foods = data.get("foods") or []
@@ -172,7 +203,11 @@ def fetch_usda_fdc_branded(barcode: str, api_key: str | None) -> dict[str, Any] 
     if not fdc_id:
         return None
 
-    fr = requests.get(FDC_FOOD.format(fdc_id=fdc_id), params={"api_key": key}, timeout=25)
+    fr = _session().get(FDC_FOOD.format(fdc_id=fdc_id), params={"api_key": key}, timeout=25)
+    if fr.status_code == 429:
+        raise UpstreamRateLimited(
+            "USDA FoodData Central rate limited (HTTP 429) on details request. Use a real USDA_FDC_API_KEY or retry later."
+        )
     fr.raise_for_status()
     detail = fr.json()
     ing = (detail.get("ingredients") or "").strip()

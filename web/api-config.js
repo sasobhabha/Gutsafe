@@ -6,4 +6,4 @@
 //
 // 2) Paste it below (no trailing slash), commit, redeploy Netlify.
 //
-window.__GUTSAFE_API__ = "";
+window.__GUTSAFE_API__ = "https://gutsafe.onrender.com";

@@ -24,6 +24,7 @@ from product_sources import (
     fetch_usda_fdc_branded,
     merge_product,
     smartlabel_configured,
+    UpstreamRateLimited,
 )
 from scoring import score_from_ingredients
 
@@ -77,6 +78,8 @@ def scan_barcode(
     off_err: str | None = None
     try:
         off = fetch_open_food_facts(code)
+    except UpstreamRateLimited as e:
+        off_err = str(e)
     except requests.RequestException as e:
         off_err = str(e)
 
@@ -85,6 +88,8 @@ def scan_barcode(
     if use_usda:
         try:
             usda = fetch_usda_fdc_branded(code, None)
+        except UpstreamRateLimited as e:
+            usda_err = str(e)
         except requests.RequestException as e:
             usda_err = str(e)
 
@@ -95,6 +100,20 @@ def scan_barcode(
             sl = fetch_smartlabel_label_insight(code)
         except requests.RequestException as e:
             sl_err = str(e)
+
+    # If upstreams are rate-limiting, return a temporary error instead of "not found".
+    rate_limited = ("rate limited" in (off_err or "").lower()) or ("rate limited" in (usda_err or "").lower())
+    if rate_limited and off is None and usda is None and sl is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "message": "Upstream ingredient databases are rate limiting or temporarily unavailable.",
+                "open_food_facts": off_err,
+                "usda_fdc": usda_err,
+                "smartlabel": "not configured" if not smartlabel_configured() else sl_err,
+                "fix": "Set USDA_FDC_API_KEY on the API host to avoid DEMO_KEY limits; retry in a minute; or disable USDA with use_usda=false.",
+            },
+        )
 
     if off is None and usda is None and sl is None:
         parts = ["Product not found in Open Food Facts, USDA FoodData Central (Branded), or SmartLabel (Label Insight)."]

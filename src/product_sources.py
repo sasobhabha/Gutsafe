@@ -21,7 +21,10 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-OFF_PRODUCT = "https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+OFF_PRODUCT_V0 = "https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+# Newer OFF API (recommended). Uses .net domain for API traffic.
+# Docs: https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/
+OFF_PRODUCT_V2 = "https://world.openfoodfacts.net/api/v2/product/{barcode}"
 OFF_HEADERS = {
     "User-Agent": "GutSafetyAI/1.0 (Open Food Facts; ingredient lookup)",
     "Accept": "application/json",
@@ -86,22 +89,50 @@ def barcode_matches(candidate_gtin: str | None, requested_barcode: str) -> bool:
 
 
 def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
-    url = OFF_PRODUCT.format(barcode=barcode)
-    r = _session().get(url, timeout=20, headers=OFF_HEADERS)
+    s = _session()
+
+    # Try API v2 first (often more reliable and smaller payload with fields=).
+    v2_url = OFF_PRODUCT_V2.format(barcode=barcode)
+    v2_params = {
+        "fields": "product_name,product_name_en,brands,ingredients_text,ingredients_text_en,image_front_url,image_front_small_url",
+    }
+    r = s.get(v2_url, params=v2_params, timeout=20, headers=OFF_HEADERS)
     if r.status_code == 429:
         raise UpstreamRateLimited("Open Food Facts rate limited (HTTP 429). Try again later.")
-    r.raise_for_status()
-    payload = r.json()
-    if payload.get("status") != 1 or not payload.get("product"):
+    if r.status_code == 404:
         return None
-    p = payload["product"]
+    if r.ok:
+        payload = r.json()
+        p = payload.get("product") or payload
+        # v2 returns { product: {...} } or sometimes the product object directly depending on proxy/cache layers
+        if not isinstance(p, dict) or not p:
+            return None
+        return {
+            "source": "open_food_facts",
+            "product_name": p.get("product_name") or p.get("product_name_en") or "",
+            "brands": p.get("brands") or "",
+            "ingredients_text": (p.get("ingredients_text") or p.get("ingredients_text_en") or "").strip(),
+            "image_url": p.get("image_front_url") or p.get("image_front_small_url") or "",
+            "raw": p,
+        }
+
+    # Fallback: legacy v0 endpoint
+    url = OFF_PRODUCT_V0.format(barcode=barcode)
+    r0 = s.get(url, timeout=20, headers=OFF_HEADERS)
+    if r0.status_code == 429:
+        raise UpstreamRateLimited("Open Food Facts rate limited (HTTP 429). Try again later.")
+    r0.raise_for_status()
+    payload0 = r0.json()
+    if payload0.get("status") != 1 or not payload0.get("product"):
+        return None
+    p0 = payload0["product"]
     return {
         "source": "open_food_facts",
-        "product_name": p.get("product_name") or p.get("product_name_en") or "",
-        "brands": p.get("brands") or "",
-        "ingredients_text": (p.get("ingredients_text") or p.get("ingredients_text_en") or "").strip(),
-        "image_url": p.get("image_front_url") or p.get("image_front_small_url") or "",
-        "raw": p,
+        "product_name": p0.get("product_name") or p0.get("product_name_en") or "",
+        "brands": p0.get("brands") or "",
+        "ingredients_text": (p0.get("ingredients_text") or p0.get("ingredients_text_en") or "").strip(),
+        "image_url": p0.get("image_front_url") or p0.get("image_front_small_url") or "",
+        "raw": p0,
     }
 
 

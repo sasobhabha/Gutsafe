@@ -1,0 +1,54 @@
+{
+  "model": "pytorch_mlp",
+  "out_path": "/Users/Shashwath/Gutsafe AI/models/microbiome_effect_nn.pt",
+  "n_train": 159,
+  "n_test": 40,
+  "r2_per_target": {
+    "bifido_delta": 0.5474771857261658,
+    "lacto_delta": 0.3469526767730713,
+    "akkermansia_delta": 0.9999755024909973,
+    "enterobacteriaceae_delta": 0.6110666990280151,
+    "diversity_delta": 0.7471301555633545,
+    "scfa_delta": 0.749925971031189,
+    "barrier_risk": 0.6621276140213013
+  },
+  "mae_per_target": {
+    "bifido_delta": 0.002490895101800561,
+    "lacto_delta": 0.0049871900118887424,
+    "akkermansia_delta": 3.6704702779388754e-06,
+    "enterobacteriaceae_delta": 0.002463209442794323,
+    "diversity_delta": 0.002482702722772956,
+    "scfa_delta": 0.0012344669084995985,
+    "barrier_risk": 0.0074614668264985085
+  },
+  "feature_columns": [
+    "sucralose",
+    "aspartame",
+    "stevia",
+    "polysorbate80",
+    "polysorbate60",
+    "cmc",
+    "red40",
+    "carrageenan",
+    "titanium_dioxide",
+    "msg",
+    "potassium_sorbate",
+    "sodium_benzoate",
+    "sodium_nitrite",
+    "phosphoric_acid",
+    "citric_acid",
+    "xylitol",
+    "sorbitol",
+    "maltitol",
+    "tartrazine",
+    "saccharin",
+    "acesulfame_k",
+    "guar_gum",
+    "xanthan_gum",
+    "propylene_glycol"
+  ],
+  "hidden_sizes": [
+    64,
+    32
+  ]
+}

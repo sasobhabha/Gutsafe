@@ -1,23 +1,23 @@
 {
-  "n_train": 8,
-  "n_test": 2,
+  "n_train": 159,
+  "n_test": 40,
   "r2_per_target": {
-    "bifido_delta": -2.451845563528095,
-    "lacto_delta": -2.067109233588832,
-    "akkermansia_delta": -5.85446432313476,
-    "enterobacteriaceae_delta": -27.541141660038317,
-    "diversity_delta": -3.4780283860146133,
-    "scfa_delta": -6.379122976644966,
-    "barrier_risk": -4.844436289699782
+    "bifido_delta": 0.5441586926770765,
+    "lacto_delta": 0.34358913152859816,
+    "akkermansia_delta": 0.9999999999839747,
+    "enterobacteriaceae_delta": 0.5993582482849935,
+    "diversity_delta": 0.7435892353584296,
+    "scfa_delta": 0.7435887870121798,
+    "barrier_risk": 0.6586251847192488
   },
   "mae_per_target": {
-    "bifido_delta": 0.5420429319084749,
-    "lacto_delta": 0.4829880481468782,
-    "akkermansia_delta": 0.1695463068511563,
-    "enterobacteriaceae_delta": 0.3677626769889826,
-    "diversity_delta": 0.5326907291219384,
-    "scfa_delta": 0.3287938402945237,
-    "barrier_risk": 1.0820008976927626
+    "bifido_delta": 0.0025000050172876995,
+    "lacto_delta": 0.005000005043816295,
+    "akkermansia_delta": 5.344217973541538e-09,
+    "enterobacteriaceae_delta": 0.002500004962339552,
+    "diversity_delta": 0.0025000052043889064,
+    "scfa_delta": 0.0012500050004067285,
+    "barrier_risk": 0.007500005067236637
   },
   "feature_columns": [
     "sucralose",

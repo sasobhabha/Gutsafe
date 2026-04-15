@@ -3,154 +3,311 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GutSafety AI — Barcode scan</title>
+  <title>GutSafe AI</title>
+  <meta name="description" content="Scan food barcodes to analyze ingredients and get gut health scores" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
   <style>
     :root {
-      --bg: #0f1714;
-      --bg-card: #16221d;
-      --border: #2a3d34;
-      --text: #e8f0eb;
-      --muted: #8fa89a;
-      --accent: #5ecf8a;
-      --accent-dim: #3a9a5f;
-      --warn: #e8b86d;
-      --danger: #e07a7a;
-      --radius: 14px;
+      --bg: #0a0f0d;
+      --bg-card: #141c18;
+      --bg-elevated: #1a241f;
+      --border: #243028;
+      --border-subtle: #1e2a23;
+      --text: #f0f5f2;
+      --text-secondary: #9aab9f;
+      --accent: #4ade80;
+      --accent-soft: #22c55e;
+      --accent-muted: rgba(74, 222, 128, 0.12);
+      --warn: #fbbf24;
+      --warn-muted: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+      --danger-muted: rgba(248, 113, 113, 0.12);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       min-height: 100vh;
-      font-family: "DM Sans", system-ui, sans-serif;
-      background: radial-gradient(1200px 600px at 10% -10%, #1a2e26 0%, var(--bg) 55%);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
-    .wrap {
-      max-width: 960px;
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 197, 94, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(74, 222, 128, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 2rem 1.25rem 4rem;
+      padding: 2.5rem 1.5rem 4rem;
     }
     header {
-      margin-bottom: 2rem;
+      text-align: center;
+      margin-bottom: 2.5rem;
     }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+    }
+    .logo-icon svg { width: 24px; height: 24px; color: var(--bg); }
     header h1 {
-      font-family: "Fraunces", Georgia, serif;
-      font-size: 1.85rem;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 2.25rem;
       font-weight: 700;
-      margin: 0 0 0.35rem;
       letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     header p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-      max-width: 42rem;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto;
     }
     .grid {
       display: grid;
       gap: 1.25rem;
     }
-    @media (min-width: 800px) {
+    @media (min-width: 768px) {
       .grid { grid-template-columns: 1fr 1fr; align-items: start; }
     }
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.25rem 1.35rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
     }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-muted);
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 20px; height: 20px; color: var(--accent); }
     .card h2 {
-      font-family: "Fraunces", Georgia, serif;
-      font-size: 1.1rem;
-      margin: 0 0 1rem;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 1.15rem;
       font-weight: 600;
     }
-    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .card h2 span {
+      display: block;
+      font-family: "Inter", sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+    }
+    .field { margin-bottom: 1rem; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
     input[type="text"] {
       width: 100%;
-      padding: 0.65rem 0.85rem;
-      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      background: #0c120f;
+      background: var(--bg);
       color: var(--text);
       font-size: 1rem;
       font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input:focus { outline: 2px solid var(--accent-dim); outline-offset: 2px; }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      margin-top: 0.85rem;
+    input[type="text"]::placeholder { color: var(--text-secondary); opacity: 0.6; }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent-muted);
     }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     button {
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
       border: none;
-      border-radius: 10px;
-      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1.25rem;
       cursor: pointer;
-      transition: transform 0.08s ease, opacity 0.15s;
+      transition: transform 0.1s, opacity 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     button:active { transform: scale(0.98); }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button svg { width: 18px; height: 18px; }
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-      color: #051208;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+      color: var(--bg);
+      box-shadow: 0 2px 12px rgba(74, 222, 128, 0.25);
     }
-    .btn-ghost {
-      background: transparent;
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(74, 222, 128, 0.35); }
+    .btn-secondary {
+      background: var(--bg-elevated);
       color: var(--text);
       border: 1px solid var(--border);
     }
+    .btn-secondary:hover:not(:disabled) { background: var(--border-subtle); }
     #reader {
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       overflow: hidden;
       border: 1px solid var(--border);
-      min-height: 220px;
-      background: #0a0f0d;
+      min-height: 200px;
+      background: var(--bg);
+      margin-bottom: 1rem;
     }
-    #reader video { border-radius: var(--radius); }
-    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; }
+    #reader video { border-radius: var(--radius-sm); }
+    .hint {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
     .status {
       margin-top: 1rem;
-      padding: 0.65rem 0.85rem;
-      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
       font-size: 0.875rem;
       display: none;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .status.err { display: block; background: rgba(224, 122, 122, 0.12); border: 1px solid rgba(224, 122, 122, 0.35); color: #f0c4c4; }
-    .status.ok { display: block; background: rgba(94, 207, 138, 0.1); border: 1px solid rgba(94, 207, 138, 0.35); color: #c8f5d8; }
-    .results { margin-top: 1.5rem; }
-    .results h2 { font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; margin: 0 0 1rem; }
-    .product-head {
+    .status svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .status.err {
       display: flex;
-      gap: 1rem;
+      background: var(--danger-muted);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: #fca5a5;
+    }
+    .status.ok {
+      display: flex;
+      background: var(--accent-muted);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #86efac;
+    }
+
+    /* Results */
+    .results {
+      margin-top: 1.5rem;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .results-header h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 1.35rem;
+    }
+    .warn-banner {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--warn-muted);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      color: #fde68a;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: flex;
       align-items: flex-start;
+      gap: 0.6rem;
+    }
+    .warn-banner svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .product-layout {
+      display: flex;
+      gap: 1.5rem;
       flex-wrap: wrap;
     }
-    .product-head img {
-      width: 96px; height: 96px; object-fit: contain;
-      border-radius: 12px; background: #fff; padding: 4px;
+    .product-info { flex: 1; min-width: 200px; }
+    .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 6px;
+      flex-shrink: 0;
+    }
+    .product-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+    .product-brand {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .product-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+    .product-meta span { display: block; margin-top: 0.15rem; }
+    .score-container {
+      text-align: center;
+      flex-shrink: 0;
     }
     .score-ring {
       --p: 50;
-      width: 140px; height: 140px;
+      --color: var(--accent);
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       position: relative;
-      background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--border) 0);
-      display: grid; place-items: center;
-      flex-shrink: 0;
+      background: conic-gradient(var(--color) calc(var(--p) * 1%), var(--border) 0);
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
     }
     .score-ring::after {
       content: "";
-      width: 108px; height: 108px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       background: var(--bg-card);
       position: absolute;
@@ -158,143 +315,236 @@
     .score-ring span {
       position: relative;
       z-index: 1;
-      font-family: "Fraunces", Georgia, serif;
-      font-size: 1.75rem;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 2rem;
       font-weight: 700;
     }
-    .score-label { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 0.35rem; }
-    .warn-banner {
-      margin: 1rem 0;
-      padding: 0.75rem 1rem;
-      border-radius: 10px;
-      background: rgba(232, 184, 109, 0.12);
-      border: 1px solid rgba(232, 184, 109, 0.35);
-      color: #f5e0bc;
-      font-size: 0.9rem;
+    .score-label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 0.6rem;
+      line-height: 1.4;
     }
-    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0; }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 1.5rem 0 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .chip {
       font-size: 0.75rem;
-      padding: 0.25rem 0.55rem;
+      padding: 0.3rem 0.65rem;
       border-radius: 999px;
-      background: #222f28;
+      background: var(--bg-elevated);
       border: 1px solid var(--border);
-      color: var(--muted);
+      color: var(--text-secondary);
     }
-    .chip.on { background: rgba(224, 122, 122, 0.15); border-color: rgba(224, 122, 122, 0.45); color: #f0bfbf; }
+    .chip.detected {
+      background: var(--danger-muted);
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fca5a5;
+    }
+    .chip.safe {
+      background: var(--accent-muted);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: #86efac;
+    }
     .fx-grid {
       display: grid;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      font-size: 0.85rem;
+      gap: 0.4rem;
     }
     .fx-row {
-      display: flex; justify-content: space-between; gap: 1rem;
-      padding: 0.45rem 0.55rem;
-      border-radius: 8px;
-      background: #0c120f;
-      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.85rem;
     }
-    .fx-row span:last-child { font-variant-numeric: tabular-nums; color: var(--accent); }
+    .fx-row span:first-child { color: var(--text-secondary); }
+    .fx-row span:last-child {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+    }
     details.ingredients {
       margin-top: 1rem;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.65rem 0.85rem;
-      background: #0c120f;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
     }
-    details.ingredients summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    details.ingredients summary {
+      cursor: pointer;
+      padding: 0.75rem 1rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+    details.ingredients summary:hover { color: var(--text); }
+    details.ingredients[open] summary { border-bottom: 1px solid var(--border); }
     details.ingredients pre {
-      margin: 0.75rem 0 0;
+      padding: 1rem;
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 0.8rem;
       color: var(--text);
+      font-family: "SF Mono", "Fira Code", monospace;
+      line-height: 1.6;
     }
+
     footer {
       margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
       font-size: 0.75rem;
-      color: var(--muted);
-      max-width: 40rem;
+      color: var(--text-secondary);
     }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="bg-gradient"></div>
+  <div class="container">
     <header>
-      <h1>GutSafety AI</h1>
-      <p>
-        Scan a barcode to pull label ingredients from <strong>Open Food Facts</strong> (global),
-        <strong>USDA FoodData Central — Branded</strong> (strong U.S. coverage), and optionally
-        <strong>SmartLabel®</strong> (Label Insight product API for participating brands), merge the best list,
-        then score curated additives with the GutSafety model (higher = friendlier to beneficial bacteria).
-      </p>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2Z"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <h1>GutSafe AI</h1>
+      </div>
+      <p>Scan food barcodes to analyze ingredients and discover how they may affect your gut health.</p>
     </header>
 
     <div class="grid">
       <div class="card">
-        <h2>Enter barcode</h2>
-        <label for="barcode">GTIN / EAN / UPC (digits only is fine)</label>
-        <input type="text" id="barcode" placeholder="e.g. 3017620422003" autocomplete="off" inputmode="numeric" />
-        <div class="row">
-          <button type="button" class="btn-primary" id="btnLookup">Look up &amp; score</button>
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+              <line x1="7" y1="8" x2="7" y2="16"/>
+              <line x1="11" y1="8" x2="11" y2="16"/>
+              <line x1="15" y1="8" x2="15" y2="12"/>
+              <line x1="17" y1="8" x2="17" y2="16"/>
+            </svg>
+          </div>
+          <h2>Enter Barcode<span>Type or paste a product barcode</span></h2>
+        </div>
+        <div class="field">
+          <label for="barcode">Product Barcode (UPC/EAN)</label>
+          <input type="text" id="barcode" placeholder="e.g. 3017620422003" autocomplete="off" inputmode="numeric" />
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn-primary" id="btnLookup">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            Analyze Product
+          </button>
         </div>
         <div id="msg" class="status" role="status"></div>
       </div>
 
       <div class="card">
-        <h2>Scan with camera</h2>
-        <div id="reader" aria-label="Barcode camera view"></div>
-        <div class="row">
-          <button type="button" class="btn-primary" id="btnStartCam">Start camera</button>
-          <button type="button" class="btn-ghost" id="btnStopCam" disabled>Stop</button>
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </div>
+          <h2>Scan with Camera<span>Use your device camera to scan</span></h2>
         </div>
-        <p class="hint">Uses your device camera. Works best in good light on 1D barcodes (EAN-13, UPC). Requires HTTPS or localhost.</p>
+        <div id="reader" aria-label="Barcode camera view"></div>
+        <div class="btn-group">
+          <button type="button" class="btn-primary" id="btnStartCam">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Start Camera
+          </button>
+          <button type="button" class="btn-secondary" id="btnStopCam" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="6" width="12" height="12" rx="2"/>
+            </svg>
+            Stop
+          </button>
+        </div>
+        <p class="hint">Position the barcode within the frame. Works best with good lighting.</p>
       </div>
     </div>
 
     <section class="results card" id="results" hidden>
-      <h2 id="resTitle">Result</h2>
-      <div id="warnBox" class="warn-banner" hidden></div>
-      <div class="product-head">
-        <img id="resImg" alt="" hidden />
-        <div>
-          <p id="resName" style="margin:0;font-weight:700;font-size:1.05rem;"></p>
-          <p id="resBrands" style="margin:0.25rem 0 0;color:var(--muted);font-size:0.9rem;"></p>
-          <p id="resBarcode" style="margin:0.35rem 0 0;font-size:0.8rem;color:var(--muted);"></p>
-          <p id="resSources" style="margin:0.35rem 0 0;font-size:0.78rem;color:var(--accent-dim);"></p>
-          <p id="resCategory" style="margin:0.2rem 0 0;font-size:0.78rem;color:var(--muted);" hidden></p>
-          <p id="resBasis" style="margin:0.35rem 0 0;font-size:0.75rem;color:var(--muted);"></p>
+      <div class="results-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
         </div>
-        <div style="margin-left:auto;text-align:center;">
-          <div class="score-ring" id="scoreRing"><span id="scoreVal">—</span></div>
-          <div class="score-label">Gut wellbeing index<br />(0–100, higher is better)</div>
-          <p id="resStress" style="margin:0.5rem 0 0;font-size:0.72rem;color:var(--muted);"></p>
+        <h2 id="resTitle">Analysis Complete</h2>
+      </div>
+
+      <div id="warnBox" class="warn-banner" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span id="warnText"></span>
+      </div>
+
+      <div class="product-layout">
+        <img id="resImg" class="product-image" alt="" hidden />
+        <div class="product-info">
+          <div class="product-name" id="resName"></div>
+          <div class="product-brand" id="resBrands"></div>
+          <div class="product-meta">
+            <span id="resBarcode"></span>
+            <span id="resSources"></span>
+            <span id="resCategory" hidden></span>
+          </div>
+        </div>
+        <div class="score-container">
+          <div class="score-ring" id="scoreRing"><span id="scoreVal">-</span></div>
+          <div class="score-label">Gut Health Score<br/>(0-100)</div>
         </div>
       </div>
 
-      <p style="margin:1rem 0 0;font-size:0.85rem;color:var(--muted);">Flagged additives in our database</p>
+      <p class="section-title">Additive Analysis</p>
       <div class="chips" id="chips"></div>
 
-      <h3 style="font-size:1rem;margin:1.25rem 0 0;font-family:Fraunces,serif;">Estimated microbiome shifts (literature aggregation)</h3>
+      <p class="section-title">Microbiome Impact Estimates</p>
       <div class="fx-grid" id="fxLit"></div>
 
       <details class="ingredients">
-        <summary>Ingredients text used for scoring (longest / best available)</summary>
+        <summary>View Full Ingredients List</summary>
         <pre id="resIngr"></pre>
       </details>
       <details class="ingredients" id="srcBreakdown" hidden>
-        <summary>Raw ingredient text by database</summary>
+        <summary>Ingredients by Data Source</summary>
         <pre id="resIngrBySrc"></pre>
       </details>
     </section>
 
     <footer>
-      Educational prototype — not medical advice.       Ingredient data: Open Food Facts contributors (ODbL), U.S. USDA FoodData Central (public domain / CC0),
-      and optionally SmartLabel® via Label Insight (credentials required —
-      <a href="https://developers.labelinsight.com/reference/get-product-by-upc-resource" target="_blank" rel="noopener">Product API</a>).
-      Set <code>USDA_FDC_API_KEY</code> for full FDC limits; set <code>SMARTLABEL_API_KEY</code> and
-      <code>SMARTLABEL_CONFIGURATION_ID</code> for SmartLabel.
+      <p>For educational purposes only. Not intended as medical advice.</p>
+      <p>Data sourced from <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> and public nutrition databases.</p>
     </footer>
   </div>
 
@@ -305,33 +555,41 @@
     let scanning = false;
 
     const FX_LABELS = {
-      bifido_delta: "Bifidobacterium (Δ)",
-      lacto_delta: "Lactobacillus (Δ)",
-      akkermansia_delta: "Akkermansia (Δ)",
-      enterobacteriaceae_delta: "Enterobacteriaceae (Δ)",
-      diversity_delta: "Diversity (Δ)",
-      scfa_delta: "SCFA / fermentation (Δ)",
-      barrier_risk: "Barrier disruption risk",
+      bifido_delta: "Bifidobacterium",
+      lacto_delta: "Lactobacillus",
+      akkermansia_delta: "Akkermansia",
+      enterobacteriaceae_delta: "Enterobacteriaceae",
+      diversity_delta: "Microbiome Diversity",
+      scfa_delta: "Short-Chain Fatty Acids",
+      barrier_risk: "Gut Barrier Risk",
     };
 
     function showMsg(text, ok) {
-      msg.textContent = text;
+      msg.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${ok 
+            ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+            : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+          }
+        </svg>
+        <span>${text}</span>
+      `;
       msg.className = "status " + (ok ? "ok" : "err");
     }
 
     function hideMsg() {
       msg.className = "status";
-      msg.textContent = "";
+      msg.innerHTML = "";
     }
 
     async function lookupBarcode(raw) {
       const digits = (raw || "").replace(/\D/g, "");
       if (digits.length < 8) {
-        showMsg("Enter at least 8 digits.", false);
+        showMsg("Please enter at least 8 digits.", false);
         return;
       }
       hideMsg();
-      showMsg("Loading product…", true);
+      showMsg("Analyzing product...", true);
       $("btnLookup").disabled = true;
       try {
         const res = await fetch("/api/scan/" + encodeURIComponent(digits));
@@ -342,14 +600,9 @@
             det = det.map((x) => (typeof x === "string" ? x : x.msg || JSON.stringify(x))).join("; ");
           }
           if (det && typeof det === "object") {
-            // FastAPI can return structured error objects in `detail`
             const msg = det.message || det.error || det.msg;
             if (msg) {
-              const parts = [String(msg)];
-              if (det.open_food_facts) parts.push("Open Food Facts: " + det.open_food_facts);
-              if (det.usda_fdc) parts.push("USDA FDC: " + det.usda_fdc);
-              if (det.smartlabel) parts.push("SmartLabel: " + det.smartlabel);
-              det = parts.join(" | ");
+              det = String(msg);
             } else {
               det = JSON.stringify(det);
             }
@@ -358,9 +611,9 @@
           return;
         }
         renderResult(data);
-        showMsg("Product loaded.", true);
+        showMsg("Analysis complete!", true);
       } catch (e) {
-        showMsg("Network error — is the server running on this host?", false);
+        showMsg("Unable to connect. Please check your connection and try again.", false);
       } finally {
         $("btnLookup").disabled = false;
       }
@@ -369,19 +622,16 @@
     function renderResult(data) {
       const sc = data.score || {};
       const wb = sc.wellbeing_index_0_100 ?? 0;
-      const stress = sc.microbiome_stress_index_0_1;
-      const basis = sc.score_basis || "";
       $("results").hidden = false;
-      $("resTitle").textContent = "Your score";
-      $("resName").textContent = data.product_name || "Unknown";
+      $("resName").textContent = data.product_name || "Unknown Product";
       $("resBrands").textContent = data.brands || "";
       $("resBarcode").textContent = "Barcode: " + (data.barcode || "");
-      const labs = (data.sources || []).map((s) => s.replace(/_/g, " "));
-      $("resSources").textContent = labs.length ? "Sources: " + labs.join(" · ") : "";
+      const labs = (data.sources || []).map((s) => s.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()));
+      $("resSources").textContent = labs.length ? "Sources: " + labs.join(", ") : "";
       const cat = $("resCategory");
       if (data.category) {
         cat.hidden = false;
-        cat.textContent = "Category (USDA): " + data.category;
+        cat.textContent = "Category: " + data.category;
       } else {
         cat.hidden = true;
       }
@@ -396,28 +646,19 @@
       $("scoreVal").textContent = String(wb);
       const ring = $("scoreRing");
       ring.style.setProperty("--p", Math.max(0, Math.min(100, wb)));
-      const rb = $("resBasis");
-      if (basis === "no_ingredient_text") {
-        rb.textContent = "Score basis: no ingredient list (baseline when nothing to score).";
-      } else if (basis === "full_ingredients_additives_lexicon") {
-        rb.textContent = "Score basis: full ingredient text — additives database + food lexicon + list-length signal.";
+      // Color based on score
+      if (wb >= 70) {
+        ring.style.setProperty("--color", "var(--accent)");
+      } else if (wb >= 40) {
+        ring.style.setProperty("--color", "var(--warn)");
       } else {
-        rb.textContent = "Score basis: " + (basis || "literature model").replace(/_/g, " ");
-      }
-      const rs = $("resStress");
-      if (stress != null && stress !== undefined && basis !== "no_ingredient_text") {
-        rs.textContent =
-          "Normalized stress (0–1): " +
-          Number(stress).toFixed(3) +
-          " — health = (1 − stress) × 100";
-      } else {
-        rs.textContent = "";
+        ring.style.setProperty("--color", "var(--danger)");
       }
 
       const warn = $("warnBox");
       if (data.warning) {
         warn.hidden = false;
-        warn.textContent = data.warning;
+        $("warnText").textContent = data.warning;
       } else {
         warn.hidden = true;
       }
@@ -427,8 +668,9 @@
       chips.innerHTML = "";
       Object.keys(flags).sort().forEach((k) => {
         const el = document.createElement("span");
-        el.className = "chip" + (flags[k] ? " on" : "");
-        el.textContent = k.replace(/_/g, " ") + (flags[k] ? " · detected" : " · not detected");
+        const isDetected = flags[k];
+        el.className = "chip " + (isDetected ? "detected" : "safe");
+        el.textContent = k.replace(/_/g, " ");
         chips.appendChild(el);
       });
 
@@ -438,26 +680,27 @@
       Object.keys(FX_LABELS).forEach((k) => {
         const row = document.createElement("div");
         row.className = "fx-row";
-        row.innerHTML = "<span>" + FX_LABELS[k] + "</span><span>" + (lit[k] != null ? Number(lit[k]).toFixed(2) : "—") + "</span>";
+        const val = lit[k] != null ? Number(lit[k]).toFixed(2) : "-";
+        row.innerHTML = `<span>${FX_LABELS[k]}</span><span>${val}</span>`;
         fx.appendChild(row);
       });
 
-      $("resIngr").textContent = data.ingredients_text || "(empty)";
+      $("resIngr").textContent = data.ingredients_text || "No ingredients listed";
 
       const by = data.ingredients_by_source || {};
       const blocks = [];
       if (by.open_food_facts) {
-        blocks.push("— Open Food Facts —\n" + by.open_food_facts);
+        blocks.push("Open Food Facts\n" + by.open_food_facts);
       }
       if (by.usda_fdc) {
-        blocks.push("— USDA FoodData Central (Branded) —\n" + by.usda_fdc);
+        blocks.push("USDA FoodData Central\n" + by.usda_fdc);
       }
       if (by.smartlabel) {
-        blocks.push("— SmartLabel (Label Insight) —\n" + by.smartlabel);
+        blocks.push("SmartLabel\n" + by.smartlabel);
       }
       const bd = $("srcBreakdown");
       const pre = $("resIngrBySrc");
-      if (blocks.length) {
+      if (blocks.length > 1) {
         bd.hidden = false;
         pre.textContent = blocks.join("\n\n");
       } else {
@@ -473,7 +716,7 @@
 
     $("btnStartCam").addEventListener("click", async () => {
       if (!window.Html5Qrcode) {
-        showMsg("Scanner library not loaded yet. Refresh the page.", false);
+        showMsg("Camera scanner is loading. Please try again.", false);
         return;
       }
       if (scanning) return;
@@ -498,7 +741,7 @@
         scanning = true;
         $("btnStopCam").disabled = false;
       } catch (e) {
-        showMsg("Camera blocked or unavailable: " + (e.message || e), false);
+        showMsg("Camera access denied or unavailable.", false);
         $("btnStartCam").disabled = false;
       }
     });
@@ -523,10 +766,7 @@
     }
 
     $("btnStopCam").addEventListener("click", stopCam);
-
-    window.addEventListener("load", () => {
-      hideMsg();
-    });
+    window.addEventListener("load", hideMsg);
   </script>
 </body>
 </html>

@@ -30,6 +30,8 @@ def main() -> None:
     )
     parser.add_argument("--pages", type=int, default=5)
     parser.add_argument("--page-size", type=int, default=100)
+    parser.add_argument("--usda-pages", type=int, default=3)
+    parser.add_argument("--usda-page-size", type=int, default=50)
     args = parser.parse_args()
 
     python = sys.executable
@@ -39,10 +41,26 @@ def main() -> None:
         shutil.copy(src, PRODUCTS_CSV)
         print(f"Copied {src} -> {PRODUCTS_CSV}", flush=True)
     else:
-        run([python, str(_SRC / "build_product_matrix.py"), "--pages", str(args.pages)])
+        run(
+            [
+                python,
+                str(_SRC / "build_product_matrix_multi.py"),
+                "--sources",
+                "off,usda",
+                "--off-pages",
+                str(args.pages),
+                "--off-page-size",
+                str(args.page_size),
+                "--usda-pages",
+                str(args.usda_pages),
+                "--usda-page-size",
+                str(args.usda_page_size),
+            ]
+        )
 
     run([python, str(_SRC / "build_training_table.py")])
     run([python, str(_SRC / "train_microbiome_model.py")])
+    run([python, str(_SRC / "train_microbiome_nn.py")])
 
 
 if __name__ == "__main__":

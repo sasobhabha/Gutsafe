@@ -9,6 +9,7 @@ ADDITIVES_CSV = DATA_DIR / "additives_effects.csv"
 PRODUCTS_CSV = DATA_DIR / "products_additives.csv"
 LABELS_CSV = DATA_DIR / "products_microbiome_labels.csv"
 MODEL_PATH = MODELS_DIR / "microbiome_effect_model.pkl"
+NN_MODEL_PATH = MODELS_DIR / "microbiome_effect_nn.pt"
 
 # column_name in CSV / model features -> phrases and E-numbers to search in ingredients_text
 ADDITIVE_PATTERNS: dict[str, list[str]] = {

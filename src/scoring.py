@@ -13,9 +13,10 @@ from typing import Any
 import joblib
 import pandas as pd
 
-from config import ADDITIVES_CSV, MODEL_PATH, TARGET_COLUMNS
+from config import ADDITIVES_CSV, MODEL_PATH, NN_MODEL_PATH, TARGET_COLUMNS
 from ingredient_match import detect_additives
 from lexicon_score import aggregate_lexicon_effects, merge_additive_and_lexicon
+from nn_model import load_nn_bundle, predict_nn
 
 # Only when there is no ingredient text AND no scorable additive signal (e.g. empty API label).
 BASELINE_NO_SIGNAL = 74.0
@@ -103,18 +104,30 @@ def score_from_flags(flags: dict[str, int], use_model: bool = True) -> dict[str,
         ),
         "wellbeing_index_0_100": health,
     }
-    if use_model and MODEL_PATH.exists():
-        bundle = joblib.load(MODEL_PATH)
-        model = bundle["model"]
-        feature_cols = list(bundle["feature_cols"])
-        row = [float(flags.get(c, 0)) for c in feature_cols]
-        X = pd.DataFrame([row], columns=feature_cols)
-        pred = model.predict(X)[0]
-        pred_effects = dict(zip(TARGET_COLUMNS, pred))
-        result["model_predicted_effects"] = {t: float(v) for t, v in zip(TARGET_COLUMNS, pred)}
-        m_health, m_stress = gut_health_score_0_100(pred_effects, has_ingredient_text=False)
-        result["model_microbiome_stress_index_0_1"] = m_stress
-        result["model_wellbeing_index_0_100"] = m_health
+    if use_model:
+        if NN_MODEL_PATH.exists():
+            nn_bundle = load_nn_bundle(NN_MODEL_PATH)
+            nn_pred = predict_nn(nn_bundle, flags)
+            result["model_type"] = "pytorch_mlp"
+            result["model_predicted_effects"] = nn_pred
+            m_health, m_stress = gut_health_score_0_100(nn_pred, has_ingredient_text=False)
+            result["model_microbiome_stress_index_0_1"] = m_stress
+            result["model_wellbeing_index_0_100"] = m_health
+        elif MODEL_PATH.exists():
+            bundle = joblib.load(MODEL_PATH)
+            model = bundle["model"]
+            feature_cols = list(bundle["feature_cols"])
+            row = [float(flags.get(c, 0)) for c in feature_cols]
+            X = pd.DataFrame([row], columns=feature_cols)
+            pred = model.predict(X)[0]
+            pred_effects = dict(zip(TARGET_COLUMNS, pred))
+            result["model_type"] = "sklearn_gbdt"
+            result["model_predicted_effects"] = {t: float(v) for t, v in zip(TARGET_COLUMNS, pred)}
+            m_health, m_stress = gut_health_score_0_100(pred_effects, has_ingredient_text=False)
+            result["model_microbiome_stress_index_0_1"] = m_stress
+            result["model_wellbeing_index_0_100"] = m_health
+        else:
+            result["model_wellbeing_index_0_100"] = result["wellbeing_index_0_100"]
     else:
         result["model_wellbeing_index_0_100"] = result["wellbeing_index_0_100"]
     return result
@@ -144,20 +157,34 @@ def score_from_ingredients(ingredients_text: str | None, use_model: bool = True)
         "wellbeing_index_0_100": health,
     }
 
-    if use_model and MODEL_PATH.exists():
-        bundle = joblib.load(MODEL_PATH)
-        model = bundle["model"]
-        feature_cols = list(bundle["feature_cols"])
-        row = [float(flags.get(c, 0)) for c in feature_cols]
-        X = pd.DataFrame([row], columns=feature_cols)
-        pred = model.predict(X)[0]
-        pred_add = dict(zip(TARGET_COLUMNS, pred))
-        result["model_predicted_effects"] = {t: float(v) for t, v in zip(TARGET_COLUMNS, pred)}
-        merged_model = merge_additive_and_lexicon(pred_add, lex_effects, n_seg)
-        m_health, m_stress = gut_health_score_0_100(merged_model, has_text)
-        result["model_effects_with_lexicon"] = merged_model
-        result["model_microbiome_stress_index_0_1"] = m_stress
-        result["model_wellbeing_index_0_100"] = m_health
+    if use_model:
+        if NN_MODEL_PATH.exists():
+            nn_bundle = load_nn_bundle(NN_MODEL_PATH)
+            nn_pred = predict_nn(nn_bundle, flags)
+            result["model_type"] = "pytorch_mlp"
+            result["model_predicted_effects"] = nn_pred
+            merged_model = merge_additive_and_lexicon(nn_pred, lex_effects, n_seg)
+            m_health, m_stress = gut_health_score_0_100(merged_model, has_text)
+            result["model_effects_with_lexicon"] = merged_model
+            result["model_microbiome_stress_index_0_1"] = m_stress
+            result["model_wellbeing_index_0_100"] = m_health
+        elif MODEL_PATH.exists():
+            bundle = joblib.load(MODEL_PATH)
+            model = bundle["model"]
+            feature_cols = list(bundle["feature_cols"])
+            row = [float(flags.get(c, 0)) for c in feature_cols]
+            X = pd.DataFrame([row], columns=feature_cols)
+            pred = model.predict(X)[0]
+            pred_add = dict(zip(TARGET_COLUMNS, pred))
+            result["model_type"] = "sklearn_gbdt"
+            result["model_predicted_effects"] = {t: float(v) for t, v in zip(TARGET_COLUMNS, pred)}
+            merged_model = merge_additive_and_lexicon(pred_add, lex_effects, n_seg)
+            m_health, m_stress = gut_health_score_0_100(merged_model, has_text)
+            result["model_effects_with_lexicon"] = merged_model
+            result["model_microbiome_stress_index_0_1"] = m_stress
+            result["model_wellbeing_index_0_100"] = m_health
+        else:
+            result["model_wellbeing_index_0_100"] = result["wellbeing_index_0_100"]
     else:
         result["model_wellbeing_index_0_100"] = result["wellbeing_index_0_100"]
 

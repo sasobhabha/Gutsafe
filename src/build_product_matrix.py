@@ -17,14 +17,31 @@ if str(_SRC) not in sys.path:
 from config import ADDITIVE_PATTERNS, DATA_DIR, PRODUCTS_CSV
 from ingredient_match import detect_additives
 
-SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
+# Prefer API v2 search; cgi endpoint is sometimes rate-limited or returns 503.
+SEARCH_URL_V2 = "https://world.openfoodfacts.net/api/v2/search"
+SEARCH_URL_V1 = "https://world.openfoodfacts.org/cgi/search.pl"
 OFF_HEADERS = {
     "User-Agent": "GutSafetyAI/1.0 (Open Food Facts API; local training)",
 }
 
 
 def fetch_page(page: int, page_size: int) -> list[dict]:
-    params = {
+    v2_params = {
+        "page": page,
+        "page_size": page_size,
+        "fields": "code,product_name,ingredients_text",
+    }
+    try:
+        r2 = requests.get(SEARCH_URL_V2, params=v2_params, timeout=45, headers=OFF_HEADERS)
+        if r2.ok:
+            data = r2.json()
+            prods = data.get("products") if isinstance(data, dict) else None
+            if isinstance(prods, list):
+                return prods
+    except requests.RequestException:
+        pass
+
+    v1_params = {
         "search_simple": 1,
         "action": "process",
         "json": 1,
@@ -32,9 +49,9 @@ def fetch_page(page: int, page_size: int) -> list[dict]:
         "page_size": page_size,
         "fields": "code,product_name,ingredients_text",
     }
-    r = requests.get(SEARCH_URL, params=params, timeout=60, headers=OFF_HEADERS)
-    r.raise_for_status()
-    return r.json().get("products", [])
+    r1 = requests.get(SEARCH_URL_V1, params=v1_params, timeout=60, headers=OFF_HEADERS)
+    r1.raise_for_status()
+    return r1.json().get("products", [])
 
 
 def build_matrix(pages: int, page_size: int, sleep_s: float) -> pd.DataFrame:

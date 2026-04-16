@@ -357,9 +357,9 @@
       display: grid;
       gap: 0.4rem;
     }
-    .fx-row {
+.fx-row {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       padding: 0.55rem 0.75rem;
       border-radius: var(--radius-sm);
@@ -367,11 +367,8 @@
       border: 1px solid var(--border-subtle);
       font-size: 0.85rem;
     }
-    .fx-row span:first-child { color: var(--text-secondary); }
-    .fx-row span:last-child {
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      color: var(--accent);
+    .fx-row span:first-child {
+      color: var(--text-secondary);
     }
     details.ingredients {
       margin-top: 1rem;
@@ -544,7 +541,7 @@
 
     <footer>
       <p>For educational purposes only. Not intended as medical advice.</p>
-      <p>Data sourced from <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> and public nutrition databases.</p>
+      <p>Data sourced from <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> and other public nutrition databases.</p>
     </footer>
   </div>
 
@@ -558,10 +555,8 @@
       bifido_delta: "Bifidobacterium",
       lacto_delta: "Lactobacillus",
       akkermansia_delta: "Akkermansia",
-      enterobacteriaceae_delta: "Enterobacteriaceae",
       diversity_delta: "Microbiome Diversity",
       scfa_delta: "Short-Chain Fatty Acids",
-      barrier_risk: "Gut Barrier Risk",
     };
 
     function showMsg(text, ok) {
@@ -680,8 +675,14 @@
       Object.keys(FX_LABELS).forEach((k) => {
         const row = document.createElement("div");
         row.className = "fx-row";
-        const val = lit[k] != null ? Number(lit[k]).toFixed(2) : "-";
-        row.innerHTML = `<span>${FX_LABELS[k]}</span><span>${val}</span>`;
+        const val = lit[k] != null ? Number(lit[k]) : null;
+        let color = "var(--accent)";
+        if (val != null && val < 0) {
+          if (val <= -1) color = "var(--danger)";
+          else if (val <= -0.5) color = "#f97316";
+          else color = "#fde047";
+        }
+        row.innerHTML = `<span style="color: ${color}">${FX_LABELS[k]}</span>`;
         fx.appendChild(row);
       });
 

@@ -37,7 +37,10 @@ FDC_FOOD = "https://api.nal.usda.gov/fdc/v1/food/{fdc_id}"
 DEFAULT_USDA_FDC_API_KEY = "x65puQKmMmVBnHKE2CZ8CPWDpsgevJwxQP9DzsMK"
 
 # SmartLabel / Label Insight — Products API v1 (ingredients.declaration)
-LABEL_INSIGHT_PRODUCT = "https://api.labelinsight.com/products/v1/{configuration_id}/upc/{upc}"
+LABEL_INSIGHT_PRODUCT = (
+    "https://api.labelinsight.com/products/v1/{configuration_id}/upc/{upc}"
+)
+
 
 class UpstreamRateLimited(Exception):
     """Raised when an upstream datasource rate-limits (HTTP 429)."""
@@ -98,7 +101,9 @@ def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
     }
     r = s.get(v2_url, params=v2_params, timeout=20, headers=OFF_HEADERS)
     if r.status_code == 429:
-        raise UpstreamRateLimited("Open Food Facts rate limited (HTTP 429). Try again later.")
+        raise UpstreamRateLimited(
+            "Open Food Facts rate limited (HTTP 429). Try again later."
+        )
     if r.status_code == 404:
         return None
     if r.ok:
@@ -111,8 +116,12 @@ def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
             "source": "open_food_facts",
             "product_name": p.get("product_name") or p.get("product_name_en") or "",
             "brands": p.get("brands") or "",
-            "ingredients_text": (p.get("ingredients_text") or p.get("ingredients_text_en") or "").strip(),
-            "image_url": p.get("image_front_url") or p.get("image_front_small_url") or "",
+            "ingredients_text": (
+                p.get("ingredients_text") or p.get("ingredients_text_en") or ""
+            ).strip(),
+            "image_url": p.get("image_front_url")
+            or p.get("image_front_small_url")
+            or "",
             "raw": p,
         }
 
@@ -120,7 +129,9 @@ def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
     url = OFF_PRODUCT_V0.format(barcode=barcode)
     r0 = s.get(url, timeout=20, headers=OFF_HEADERS)
     if r0.status_code == 429:
-        raise UpstreamRateLimited("Open Food Facts rate limited (HTTP 429). Try again later.")
+        raise UpstreamRateLimited(
+            "Open Food Facts rate limited (HTTP 429). Try again later."
+        )
     r0.raise_for_status()
     payload0 = r0.json()
     if payload0.get("status") != 1 or not payload0.get("product"):
@@ -130,7 +141,9 @@ def fetch_open_food_facts(barcode: str) -> dict[str, Any] | None:
         "source": "open_food_facts",
         "product_name": p0.get("product_name") or p0.get("product_name_en") or "",
         "brands": p0.get("brands") or "",
-        "ingredients_text": (p0.get("ingredients_text") or p0.get("ingredients_text_en") or "").strip(),
+        "ingredients_text": (
+            p0.get("ingredients_text") or p0.get("ingredients_text_en") or ""
+        ).strip(),
         "image_url": p0.get("image_front_url") or p0.get("image_front_small_url") or "",
         "raw": p0,
     }
@@ -143,7 +156,11 @@ def _fdc_api_key() -> str | None:
 
 
 def _smartlabel_credentials() -> tuple[str | None, str | None]:
-    key = (os.environ.get("SMARTLABEL_API_KEY") or os.environ.get("LABEL_INSIGHT_API_KEY") or "").strip() or None
+    key = (
+        os.environ.get("SMARTLABEL_API_KEY")
+        or os.environ.get("LABEL_INSIGHT_API_KEY")
+        or ""
+    ).strip() or None
     cid = (
         os.environ.get("SMARTLABEL_CONFIGURATION_ID")
         or os.environ.get("LABEL_INSIGHT_CONFIGURATION_ID")
@@ -187,7 +204,11 @@ def fetch_smartlabel_label_insight(barcode: str) -> dict[str, Any] | None:
         footnotes = [str(s).strip() for s in symbols if s]
     full = decl
     if footnotes:
-        full = (decl + "\n\n" + "\n".join(footnotes)).strip() if decl else "\n".join(footnotes)
+        full = (
+            (decl + "\n\n" + "\n".join(footnotes)).strip()
+            if decl
+            else "\n".join(footnotes)
+        )
 
     cat = ""
     cg = data.get("categorization")
@@ -239,7 +260,9 @@ def fetch_usda_fdc_branded(barcode: str, api_key: str | None) -> dict[str, Any] 
     if not fdc_id:
         return None
 
-    fr = _session().get(FDC_FOOD.format(fdc_id=fdc_id), params={"api_key": key}, timeout=25)
+    fr = _session().get(
+        FDC_FOOD.format(fdc_id=fdc_id), params={"api_key": key}, timeout=25
+    )
     if fr.status_code == 429:
         raise UpstreamRateLimited(
             "USDA FoodData Central rate limited (HTTP 429) on details request. Use a real USDA_FDC_API_KEY or retry later."
@@ -342,8 +365,6 @@ def merge_product(
             brands = smartlabel.get("brands") or ""
 
     warnings: list[str] = []
-    if ing_note:
-        warnings.append(ing_note)
     if not ing.strip():
         warnings.append(
             "No ingredient list from Open Food Facts, USDA, or SmartLabel — score reflects empty label (not real risk)."

@@ -87,8 +87,54 @@
       color: var(--text-secondary);
       font-size: 1rem;
       max-width: 480px;
-      margin: 0 auto;
+      margin: 0.5rem auto 0;
     }
+    .tab-bar {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.6rem 1.1rem;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      box-shadow: none;
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .about-pane .card {
+      max-width: 680px;
+    }
+    .about-pane h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+    }
+    .about-pane p, .about-pane li {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .about-pane ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .about-pane li { margin-bottom: 0.35rem; }
+    .about-pane strong { color: var(--text); }
     .grid {
       display: grid;
       gap: 1.25rem;
@@ -406,6 +452,72 @@
     }
     footer a { color: var(--accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
+
+    .additive-table-wrap {
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .additive-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .additive-table th {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+    .additive-table th:first-child { text-align: left; }
+    .additive-table td {
+      padding: 0.45rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .additive-table td:first-child { text-align: left; color: var(--text); }
+    .additive-table tbody tr:last-child td { border-bottom: none; }
+    .additive-table tbody tr:hover td { background: var(--bg-elevated); }
+    .additive-table td.neg { color: var(--danger); font-weight: 600; }
+    .additive-table td.pos { color: var(--accent); font-weight: 600; }
+    .additive-table tr.row-good td:first-child { color: var(--accent); }
+    .lit-section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 1.1rem 0 0.3rem;
+    }
+    .lit-list {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .lit-list li {
+      margin-bottom: 0.6rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .lit-list a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .lit-list a:hover { text-decoration: underline; }
+    .disclaimer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
@@ -424,6 +536,12 @@
       <p>Scan food barcodes to analyze ingredients and discover how they may affect your gut health.</p>
     </header>
 
+    <nav class="tab-bar">
+      <button class="tab active" id="tabScanner" data-tab="scanner">Scanner</button>
+      <button class="tab" id="tabAbout" data-tab="about">About</button>
+    </nav>
+
+    <div id="paneScanner">
     <div class="grid">
       <div class="card">
         <div class="card-header">
@@ -538,6 +656,154 @@
         <pre id="resIngrBySrc"></pre>
       </details>
     </section>
+    </div><!-- end #paneScanner -->
+
+    <div id="paneAbout" class="about-pane" hidden>
+      <div class="card">
+        <p>GutSafe AI analyzes food products to estimate their impact on gut health based on their ingredients.</p>
+
+        <h3>Scoring Pipeline</h3>
+        <p>The Gut Health Score (0–100) is produced by a 6-step pipeline run on every product's ingredient list:</p>
+        <ol class="lit-list">
+          <li><strong>Additive detection.</strong> The ingredient text is scanned for 24 regulated additives using regex patterns and EU E-number synonyms. Each detected additive sets a binary flag (0 or 1).</li>
+          <li><strong>Literature delta accumulation.</strong> Every flagged additive contributes its curated per-target deltas (see table below) to a running sum across all 7 microbiome dimensions. Multiple additives stack additively.</li>
+          <li><strong>Ingredient lexicon scan.</strong> The text is split by comma into segments. Each segment is matched against a 120-entry lexicon (longest match wins). One contribution per segment is added to the running sum — this captures beneficial ingredients (whole grains, legumes, fermented foods) as well as harmful ones not on the additive list.</li>
+          <li><strong>Ultra-processed proxy.</strong> If the ingredient list has more than 6 comma-separated segments, a small penalty of <code>+0.0035 × (n − 6)</code> is added to <em>Gut Barrier Risk</em>, capped at +0.14. This reflects the general association between ingredient-list length and ultra-processing.</li>
+          <li><strong>Microbiome Stress Index.</strong> The 7 merged deltas are collapsed into a single stress score (0–∞) using weighted components:
+            <ul>
+              <li><em>Beneficial loss</em> (weight 0.26): sum of absolute negative deltas for Bifidobacterium, Lactobacillus, and Akkermansia</li>
+              <li><em>Opportunist growth</em> (weight 0.17): positive delta of Enterobacteriaceae (clamped ≥ 0)</li>
+              <li><em>Ecosystem loss</em> (weight 0.17): sum of absolute negative deltas for Diversity and SCFA</li>
+              <li><em>Barrier risk</em> (weight 0.40): raw barrier risk value, clamped to [0, 1.2]</li>
+            </ul>
+          </li>
+          <li><strong>Final score.</strong> Stress is normalised against a saturation constant of 1.52. Score = (1 − stress / 1.52) × 100, clamped to [0, 100]. A product with no ingredient text and no detected signal defaults to 74 (neutral baseline). The ML model (PyTorch MLP, hidden layers [64, 32]) trained on 199 real products provides a secondary predicted-effects estimate which is merged with the lexicon before final scoring.</li>
+        </ol>
+
+        <h3>Microbiome Dimensions</h3>
+        <p>All 7 target dimensions and their role in the score:</p>
+        <ul>
+          <li><strong>Bifidobacterium Δ</strong> — Negative values reduce a keystone probiotic genus linked to immune regulation, IgA production, and pathogen exclusion.</li>
+          <li><strong>Lactobacillus Δ</strong> — Negative values reduce lactic-acid bacteria that maintain colonic pH, compete with pathogens, and enhance nutrient bioavailability.</li>
+          <li><strong>Akkermansia Δ</strong> — Negative values reduce the mucin-layer coloniser whose abundance correlates with intact gut barrier and metabolic health.</li>
+          <li><strong>Enterobacteriaceae Δ</strong> — Positive values increase a family that contains opportunistic pathogens (E. coli, Klebsiella). Drives the opportunist weight.</li>
+          <li><strong>Diversity Δ</strong> — Negative values reduce overall ecosystem richness (Shannon index proxy). Low diversity is a consistent marker of dysbiosis.</li>
+          <li><strong>SCFA Δ</strong> — Negative values reduce short-chain fatty acid production (butyrate, propionate, acetate), which fuel colonocytes and regulate inflammation.</li>
+          <li><strong>Gut Barrier Risk</strong> — Positive values indicate increased intestinal permeability risk ("leaky gut"), which drives the highest-weighted component (0.40) of the stress score.</li>
+        </ul>
+        <p>Colors in the Microbiome Impact panel indicate severity of negative effect: <span style="color:var(--accent)">green</span> (no impact), <span style="color:#fde047">yellow</span> (Δ &gt; −0.5), <span style="color:#f97316">orange</span> (Δ &gt; −1.0), <span style="color:var(--danger)">red</span> (Δ ≤ −1.0).</p>
+
+        <h3>Flagged Ingredient Effects</h3>
+        <p>Exact per-target deltas used in Step 2, sourced from peer-reviewed literature:</p>
+        <div class="additive-table-wrap">
+          <table class="additive-table">
+            <thead>
+              <tr>
+                <th>Additive</th>
+                <th title="Bifidobacterium delta">Bifido</th>
+                <th title="Lactobacillus delta">Lacto</th>
+                <th title="Akkermansia delta">Akkerm.</th>
+                <th title="Enterobacteriaceae delta">Entero.</th>
+                <th title="Diversity delta">Div.</th>
+                <th title="SCFA delta">SCFA</th>
+                <th title="Gut Barrier Risk">Barrier</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Polysorbate 80 (E433)</td><td class="neg">−0.45</td><td class="neg">−0.40</td><td class="neg">−0.55</td><td class="pos">+0.50</td><td class="neg">−0.55</td><td class="neg">−0.45</td><td class="pos">0.95</td></tr>
+              <tr><td>CMC / Cellulose Gum (E466)</td><td class="neg">−0.25</td><td class="neg">−0.22</td><td class="neg">−0.40</td><td class="pos">+0.20</td><td class="neg">−0.35</td><td class="neg">−0.35</td><td class="pos">0.75</td></tr>
+              <tr><td>Polysorbate 60 (E435)</td><td class="neg">−0.30</td><td class="neg">−0.26</td><td class="neg">−0.35</td><td class="pos">+0.32</td><td class="neg">−0.35</td><td class="neg">−0.28</td><td class="pos">0.70</td></tr>
+              <tr><td>Red 40 / Allura Red (E129)</td><td class="neg">−0.18</td><td class="neg">−0.12</td><td class="neg">−0.08</td><td class="pos">+0.25</td><td class="neg">−0.20</td><td class="neg">−0.15</td><td class="pos">0.55</td></tr>
+              <tr><td>Carrageenan (E407)</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="pos">+0.08</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="pos">0.20</td></tr>
+              <tr><td>Sucralose (E955)</td><td class="neg">−0.15</td><td class="neg">−0.12</td><td class="neg">−0.05</td><td class="pos">+0.08</td><td class="neg">−0.08</td><td class="neg">−0.05</td><td class="pos">0.20</td></tr>
+              <tr><td>Saccharin (E954)</td><td class="neg">−0.10</td><td class="neg">−0.12</td><td class="neg">−0.04</td><td class="pos">+0.08</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="pos">0.25</td></tr>
+              <tr><td>Sodium Nitrite (E250)</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="pos">+0.12</td><td class="neg">−0.10</td><td class="neg">−0.08</td><td class="pos">0.25</td></tr>
+              <tr><td>Titanium Dioxide (E171)</td><td class="neg">−0.05</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">+0.05</td><td class="neg">−0.04</td><td class="pos">+0.02</td><td class="pos">0.15</td></tr>
+              <tr><td>Sodium Benzoate (E211)</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="neg">−0.02</td><td class="pos">−0.04</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="pos">0.14</td></tr>
+              <tr><td>Potassium Sorbate (E202)</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="neg">−0.03</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="neg">−0.08</td><td class="pos">0.18</td></tr>
+              <tr><td>Aspartame (E951)</td><td class="neg">−0.08</td><td class="neg">−0.10</td><td>0.00</td><td class="pos">+0.05</td><td class="neg">−0.05</td><td class="neg">−0.03</td><td class="pos">0.15</td></tr>
+              <tr><td>Acesulfame K (E950)</td><td class="neg">−0.06</td><td class="neg">−0.08</td><td class="neg">−0.02</td><td class="pos">+0.05</td><td class="neg">−0.05</td><td class="neg">−0.04</td><td class="pos">0.15</td></tr>
+              <tr><td>Tartrazine / Yellow 5 (E102)</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">+0.08</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="pos">0.18</td></tr>
+              <tr><td>MSG (E621)</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="neg">−0.03</td><td class="pos">+0.04</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.12</td></tr>
+              <tr><td>Stevia / Steviol (E960)</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td>0.00</td><td class="pos">+0.02</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.08</td></tr>
+              <tr><td>Xanthan Gum (E415)</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td class="pos">+0.04</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.12</td></tr>
+              <tr><td>Sorbitol (E420)</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td>0.00</td><td class="pos">+0.03</td><td class="neg">−0.04</td><td class="neg">−0.04</td><td class="pos">0.12</td></tr>
+              <tr><td>Maltitol (E965)</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td>0.00</td><td class="pos">+0.03</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.10</td></tr>
+              <tr><td>Propylene Glycol (E1520)</td><td class="neg">−0.03</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">+0.04</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.10</td></tr>
+              <tr><td>Phosphoric Acid (E338)</td><td class="neg">−0.02</td><td class="neg">−0.02</td><td class="neg">−0.01</td><td class="pos">+0.02</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.08</td></tr>
+              <tr><td>Xylitol (E967)</td><td class="pos">+0.08</td><td class="neg">−0.04</td><td class="pos">+0.02</td><td class="neg">−0.02</td><td class="pos">+0.04</td><td class="pos">+0.06</td><td class="neg">−0.05</td></tr>
+              <tr><td>Citric Acid (E330)</td><td class="neg">−0.01</td><td class="neg">−0.01</td><td>0.00</td><td class="pos">+0.01</td><td class="neg">−0.02</td><td class="neg">−0.01</td><td class="pos">0.04</td></tr>
+              <tr class="row-good"><td>Guar Gum (E412)</td><td class="pos">+0.12</td><td class="pos">+0.08</td><td class="pos">+0.06</td><td class="neg">−0.06</td><td class="pos">+0.08</td><td class="pos">+0.15</td><td class="neg">−0.12</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.5rem;">Δ values represent estimated relative abundance / risk unit changes aggregated from published animal and human studies. Values are signed: negative = harmful, positive = beneficial. Barrier Risk: positive = higher permeability risk.</p>
+
+          <h3>Product Data Sources</h3>
+          <p>Product ingredient and label data is fetched live from:</p>
+          <ul>
+            <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> — global crowdsourced food product database</li>
+            <li><a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">USDA FoodData Central</a> — branded foods database from the USDA National Agricultural Library</li>
+            <li><a href="https://www.smartlabel.org/" target="_blank" rel="noopener">SmartLabel / Label Insight</a> — CPG brand digital label disclosure data</li>
+          </ul>
+
+          <h3>Scientific Literature</h3>
+          <p>Ingredient microbiome effects are derived from the following peer-reviewed studies, organized by topic:</p>
+
+          <p class="lit-section-label">General Microbiome &amp; Diet</p>
+          <ol class="lit-list">
+            <li>Clemente et al. <em>The impact of the gut microbiota on human health: an integrative view.</em> Cell, 2012. <a href="https://doi.org/10.1016/j.cell.2012.01.035" target="_blank" rel="noopener">doi:10.1016/j.cell.2012.01.035</a></li>
+            <li>Sonnenburg &amp; Bäckhed. <em>Diet–microbiota interactions in health are controlled by intestinal nitrogen source constraints.</em> Nature, 2016. <a href="https://doi.org/10.1038/nature18849" target="_blank" rel="noopener">doi:10.1038/nature18849</a></li>
+            <li>Zinöcker &amp; Lindseth. <em>The Western Diet–Microbiome-Host Interaction and Its Role in Metabolic Disease.</em> Nutrients, 2018. <a href="https://doi.org/10.3390/nu10030365" target="_blank" rel="noopener">doi:10.3390/nu10030365</a></li>
+            <li>Wastyk et al. <em>Gut-microbiota-targeted diets modulate human immune status.</em> Cell, 2021. <a href="https://doi.org/10.1016/j.cell.2021.06.019" target="_blank" rel="noopener">doi:10.1016/j.cell.2021.06.019</a></li>
+          </ol>
+
+          <p class="lit-section-label">Dietary Fiber, Prebiotics &amp; SCFA</p>
+          <ol class="lit-list">
+            <li>Slavin. <em>Fiber and Prebiotics: Mechanisms and Health Benefits.</em> Nutrients, 2013. <a href="https://doi.org/10.3390/nu5041417" target="_blank" rel="noopener">doi:10.3390/nu5041417</a></li>
+            <li>Kovatcheva-Datchary et al. <em>Dietary Fiber-Induced Improvement in Glucose Metabolism Is Associated with Increased Abundance of Prevotella.</em> Cell Metabolism, 2015. <a href="https://doi.org/10.1016/j.cmet.2015.10.001" target="_blank" rel="noopener">doi:10.1016/j.cmet.2015.10.001</a></li>
+            <li>Desai et al. <em>A Dietary Fiber-Deprived Gut Microbiota Degrades the Colonic Mucus Barrier and Enhances Pathogen Susceptibility.</em> Cell, 2016. <a href="https://doi.org/10.1016/j.cell.2016.10.043" target="_blank" rel="noopener">doi:10.1016/j.cell.2016.10.043</a></li>
+            <li>Baxter et al. <em>Dynamics of Human Gut Microbiota and Short-Chain Fatty Acids in Response to Dietary Interventions with Three Fermentable Fibers.</em> mBio, 2019. <a href="https://doi.org/10.1128/mBio.02566-18" target="_blank" rel="noopener">doi:10.1128/mBio.02566-18</a></li>
+            <li>Dahl et al. <em>A dietary fiber supplement improves gut microbiota diversity.</em> ISME J, 2023. <a href="https://doi.org/10.1038/s41396-022-01355-3" target="_blank" rel="noopener">doi:10.1038/s41396-022-01355-3</a></li>
+          </ol>
+
+          <p class="lit-section-label">Artificial Sweeteners</p>
+          <ol class="lit-list">
+            <li>Suez et al. <em>Artificial sweeteners induce glucose intolerance by altering the gut microbiota.</em> Nature, 2014. <a href="https://doi.org/10.1038/nature13793" target="_blank" rel="noopener">doi:10.1038/nature13793</a></li>
+            <li>Bian et al. <em>Gut Microbiome Response to Sucralose and Its Potential Role in Inducing Liver Inflammation in Mice.</em> Front. Physiol., 2017. <a href="https://doi.org/10.3389/fphys.2017.00487" target="_blank" rel="noopener">doi:10.3389/fphys.2017.00487</a></li>
+            <li>Ruiz-Ojeda et al. <em>Effects of Sweeteners on the Gut Microbiota: A Review of Experimental Studies and Clinical Trials.</em> Adv. Nutr., 2019. <a href="https://doi.org/10.1093/advances/nmy037" target="_blank" rel="noopener">doi:10.1093/advances/nmy037</a></li>
+          </ol>
+
+          <p class="lit-section-label">Emulsifiers &amp; Food Additives</p>
+          <ol class="lit-list">
+            <li>Chassaing et al. <em>Dietary emulsifiers impact the mouse gut microbiota promoting colitis and metabolic syndrome.</em> Nature, 2015. <a href="https://doi.org/10.1038/nature14232" target="_blank" rel="noopener">doi:10.1038/nature14232</a></li>
+            <li>Bhattacharyya &amp; Tobacman. <em>Molecular signature of kappa-carrageenan mimics chondroitin-4-sulfate and dermatan sulfate and enables interaction with arylsulfatase B.</em> J. Nutr. Biochem., 2012. <a href="https://doi.org/10.1016/j.jnutbio.2011.05.012" target="_blank" rel="noopener">doi:10.1016/j.jnutbio.2011.05.012</a></li>
+            <li>Bettini et al. <em>Food-grade TiO2 impairs intestinal and systemic immune homeostasis, initiates preneoplastic lesions and promotes aberrant crypt development in the rat colon.</em> Sci. Rep., 2017. <a href="https://doi.org/10.1038/srep40373" target="_blank" rel="noopener">doi:10.1038/srep40373</a></li>
+            <li>Niaz et al. <em>Extensive use of monosodium glutamate: A threat to public health?</em> EXCLI J., 2018. <a href="https://doi.org/10.17179/excli2018-1092" target="_blank" rel="noopener">doi:10.17179/excli2018-1092</a></li>
+          </ol>
+
+          <p class="lit-section-label">Food Colorants</p>
+          <ol class="lit-list">
+            <li>He et al. <em>Food colorants metabolized by commensal bacteria promote colitis in mice with dysregulated expression of interleukin-23.</em> Cell Metabolism, 2021. <a href="https://doi.org/10.1016/j.cmet.2021.04.015" target="_blank" rel="noopener">doi:10.1016/j.cmet.2021.04.015</a></li>
+            <li>Kwon et al. <em>Chronic exposure to synthetic food colorant Allura Red AC promotes susceptibility to experimental colitis via intestinal serotonin in mice.</em> Nat. Commun., 2022. <a href="https://doi.org/10.1038/s41467-022-35309-y" target="_blank" rel="noopener">doi:10.1038/s41467-022-35309-y</a></li>
+          </ol>
+
+          <p class="lit-section-label">Preservatives</p>
+          <ol class="lit-list">
+            <li>Nagpal et al. <em>Distinct Gut Microbiota Signatures in Mice Treated with Commonly Used Food Preservatives.</em> Microorganisms, 2021. <a href="https://doi.org/10.3390/microorganisms9112311" target="_blank" rel="noopener">doi:10.3390/microorganisms9112311</a></li>
+            <li>Li et al. <em>Systematic evaluation of antimicrobial food preservatives on glucose metabolism and gut microbiota in healthy mice.</em> npj Science of Food, 2022. <a href="https://doi.org/10.1038/s41538-022-00158-y" target="_blank" rel="noopener">doi:10.1038/s41538-022-00158-y</a></li>
+            <li>Xiao et al. <em>Effects of potassium sorbate on systemic inflammation and gut microbiota in normal mice.</em> Food Chem. Toxicol., 2024. <a href="https://doi.org/10.1016/j.fct.2024.114443" target="_blank" rel="noopener">doi:10.1016/j.fct.2024.114443</a></li>
+          </ol>
+
+          <p class="lit-section-label">Polyols &amp; Sugar Alcohols</p>
+          <ol class="lit-list">
+            <li>Mäkinen. <em>Sugar Alcohol Sweeteners as Alternatives to Sugar with Special Consideration of Xylitol.</em> Med. Princ. Pract., 2011. <a href="https://doi.org/10.1159/000324534" target="_blank" rel="noopener">doi:10.1159/000324534</a></li>
+            <li>Uebanso et al. <em>Effects of Consuming Xylitol on Gut Microbiota and Lipid Metabolism in Mice.</em> Nutrients, 2017. <a href="https://doi.org/10.3390/nu9070756" target="_blank" rel="noopener">doi:10.3390/nu9070756</a></li>
+          </ol>
+
+        <p class="disclaimer">This tool is for educational purposes only. It is not medical advice. Consult a healthcare professional for dietary concerns.</p>
+      </div>
+    </div>
 
     <footer>
       <p>For educational purposes only. Not intended as medical advice.</p>
@@ -768,6 +1034,16 @@
 
     $("btnStopCam").addEventListener("click", stopCam);
     window.addEventListener("load", hideMsg);
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const target = tab.dataset.tab;
+        $("paneScanner").hidden = target !== "scanner";
+        $("paneAbout").hidden = target !== "about";
+      });
+    });
   </script>
 </body>
 </html>

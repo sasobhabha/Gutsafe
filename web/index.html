@@ -869,6 +869,11 @@
               det = JSON.stringify(det);
             }
           }
+          if (det === "Product not found") {
+            $("results").hidden = true;
+            showMsg("Product not found", false);
+            return;
+          }
           showMsg(det || ("Error " + res.status), false);
           return;
         }

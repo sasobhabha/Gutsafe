@@ -164,6 +164,8 @@ def scan_barcode(
 
     merged = merge_product(code, off, usda, sl)
     ing = merged.get("ingredients_text") or ""
+    if not ing.strip():
+        raise HTTPException(status_code=404, detail="Product not found")
     warning_parts = list(merged.get("warnings") or [])
     if merged.get("smartlabel_allergen_advisory"):
         warning_parts.append("Advisory: " + merged["smartlabel_allergen_advisory"])

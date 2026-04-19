@@ -304,6 +304,7 @@
       gap: 0.6rem;
     }
     .warn-banner svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .warn-banner[hidden] { display: none; }
     .product-layout {
       display: flex;
       gap: 1.5rem;
@@ -561,7 +562,7 @@
         </div>
         <div class="field">
           <label for="barcode">Product Barcode (UPC/EAN)</label>
-          <input type="text" id="barcode" placeholder="e.g. 3017620422003" autocomplete="off" inputmode="numeric" />
+          <input type="text" id="barcode" placeholder="e.g. 078742315805" autocomplete="off" inputmode="numeric" />
         </div>
         <div class="btn-group">
           <button type="button" class="btn-primary" id="btnLookup">
@@ -677,7 +678,7 @@
               <li><em>Barrier risk</em> (weight 0.40): raw barrier risk value, clamped to [0, 1.2]</li>
             </ul>
           </li>
-          <li><strong>Final score.</strong> Stress is normalised against a saturation constant of 1.52. Score = (1 − stress / 1.52) × 100, clamped to [0, 100]. A product with no ingredient text and no detected signal defaults to 74 (neutral baseline). The ML model (PyTorch MLP, hidden layers [64, 32]) trained on 199 real products provides a secondary predicted-effects estimate which is merged with the lexicon before final scoring.</li>
+          <li><strong>Final score.</strong> The ML model (PyTorch MLP, hidden layers [64, 32]) trained on 199 real products provides a secondary predicted-effects estimate which is merged with the lexicon before final scoring.</li>
         </ol>
 
         <h3>Microbiome Dimensions</h3>
@@ -928,12 +929,31 @@
       const chips = $("chips");
       chips.innerHTML = "";
       Object.keys(flags).sort().forEach((k) => {
-        const el = document.createElement("span");
         const isDetected = flags[k];
-        el.className = "chip " + (isDetected ? "detected" : "safe");
+        if (!isDetected) return;
+        const el = document.createElement("span");
+        el.className = "chip detected";
         el.textContent = k.replace(/_/g, " ");
         chips.appendChild(el);
       });
+      // Show lexicon keyword hits in yellow (they're different from regulated additives)
+      const lexHits = sc.lexicon_keyword_hits || [];
+      const lexContrib = sc.lexicon_contribution || {};
+      const hasNegLex = Object.values(lexContrib).some(v => Number(v) < -0.001);
+      if (hasNegLex) {
+        lexHits.forEach((kw) => {
+          const el = document.createElement("span");
+          el.className = "chip detected";
+          el.style.background = "rgba(251, 191, 36, 0.15)";
+          el.style.borderColor = "rgba(251, 191, 36, 0.5)";
+          el.style.color = "#fde68a";
+          el.textContent = kw;
+          chips.appendChild(el);
+        });
+      }
+      if (!chips.innerHTML) {
+        chips.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None detected</span>';
+      }
 
       const lit = sc.literature_aggregated_effects || {};
       const fx = $("fxLit");

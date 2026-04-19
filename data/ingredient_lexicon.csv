@@ -43,7 +43,7 @@ whey protein,0.01,0.01,0.00,-0.01,0.01,0.02,-0.01,protein fermentation
 whey,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
 milk protein,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
 casein,0.00,0.00,0.00,0.00,0.00,0.01,-0.01,
-lactose,0.00,0.00,0.00,0.02,-0.02,-0.01,0.03,fermentable disaccharide
+lactose,0.02,0.02,0.01,-0.01,0.01,0.02,-0.02,mild prebiotic; increases bifidobacterial in humans
 yogurt powder,0.02,0.02,0.01,-0.01,0.02,0.02,-0.02,fermented dairy residue
 palm oil,0.00,-0.01,-0.02,0.02,-0.02,-0.02,0.06,saturated fat microbiome literature mixed
 palm kernel oil,0.00,-0.01,-0.02,0.02,-0.02,-0.02,0.06,

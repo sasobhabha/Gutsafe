@@ -21,7 +21,6 @@ ADDITIVE_PATTERNS: dict[str, list[str]] = {
     "cmc": [
         "carboxymethylcellulose",
         "carboxymethyl cellulose",
-        "cellulose gum",
         " e466",
         "e466 ",
         "e466,",

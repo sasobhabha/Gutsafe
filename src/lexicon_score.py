@@ -71,7 +71,9 @@ def _keyword_in_segment(keyword: str, segment: str) -> bool:
     return k in seg
 
 
-def aggregate_lexicon_effects(ingredients_text: str | None) -> tuple[dict[str, float], int, list[str]]:
+def aggregate_lexicon_effects(
+    ingredients_text: str | None,
+) -> tuple[dict[str, float], int, list[str]]:
     """
     Sum lexicon rows: one best (longest) keyword match per segment.
     Returns (effects dict, segment_count, matched_keywords for transparency).
@@ -104,7 +106,10 @@ def merge_additive_and_lexicon(
     segment_count: int,
 ) -> dict[str, float]:
     """Element-wise sum + ultra-processed proxy from ingredient-list length."""
-    merged = {t: float(additive_effects.get(t, 0)) + float(lexicon_effects.get(t, 0)) for t in TARGET_COLUMNS}
+    merged = {
+        t: float(additive_effects.get(t, 0)) + float(lexicon_effects.get(t, 0))
+        for t in TARGET_COLUMNS
+    }
     if segment_count > 6:
-        merged["barrier_risk"] += min(0.14, 0.0035 * float(segment_count - 6))
+        merged["barrier_risk"] += min(0.50, 0.012 * float(segment_count - 6))
     return merged

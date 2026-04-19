@@ -100,6 +100,9 @@ mono and diglycerides,-0.03,-0.03,-0.04,0.05,-0.04,-0.03,0.12,
 diglycerides,-0.03,-0.03,-0.04,0.05,-0.04,-0.03,0.12,
 beef,-0.01,-0.01,-0.01,0.03,-0.02,-0.02,0.06,heme / TMAO context at high intake
 pork,-0.01,-0.01,-0.01,0.03,-0.02,-0.02,0.06,
+processed meat,-0.10,-0.10,-0.08,0.15,-0.18,-0.12,0.30,IARC Group 1 carcinogen; reduces diversity and increases TMAO and NOC
+cured meat,-0.10,-0.10,-0.08,0.15,-0.18,-0.12,0.28,nitrite and heme; dysbiosis and lipid peroxidation
+ice cream,-0.06,-0.06,-0.05,0.10,-0.12,-0.08,0.20,UPF with emulsifiers; inversely linked to diversity
 chicken,0.00,0.00,0.00,0.02,-0.01,-0.01,0.03,
 turkey,0.00,0.00,0.00,0.02,-0.01,-0.01,0.03,
 fish,0.01,0.00,0.00,0.01,0.00,0.02,-0.01,omega-3 favorable context

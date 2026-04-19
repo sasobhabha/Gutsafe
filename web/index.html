@@ -443,7 +443,7 @@
       font-weight: 600;
     }
     details.reveal-details .reveal-content {
-      padding: 1rem;
+      padding: 1.5rem;
     }
     details.ingredients pre {
       padding: 1rem;
@@ -654,15 +654,15 @@
         </div>
       </div>
 
-      <details class="ingredients">
-        <summary>Reveal Analysis Details</summary>
-<p class="section-title">Additive Analysis</p>
+      <p class="section-title" style="margin-top:1rem">Additive Analysis</p>
       <div class="chips" id="chips"></div>
 
       <details class="ingredients reveal-details">
         <summary>Reveal Analysis Details</summary>
         <div class="reveal-content">
-          <p class="section-title">Full Microbiome Impact</p>
+          <p class="section-title">Additional Concerns</p>
+          <div class="chips" id="chipsYellow"></div>
+          <p class="section-title" style="margin-top:1rem">Microbiome Impact</p>
           <div class="fx-grid" id="fxLit"></div>
         </div>
       </details>
@@ -962,10 +962,15 @@
         el.textContent = k.replace(/_/g, " ");
         chips.appendChild(el);
       });
-      // Show lexicon keyword hits in yellow (they're different from regulated additives)
+      if (!chips.innerHTML) {
+        chips.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None detected</span>';
+      }
+      // Show lexicon keyword hits in yellow - inside reveal box
       const lexHits = sc.lexicon_keyword_hits || [];
       const lexContrib = sc.lexicon_contribution || {};
       const hasNegLex = Object.values(lexContrib).some(v => Number(v) < -0.001);
+      const chipsYellow = $("chipsYellow");
+      chipsYellow.innerHTML = "";
       if (hasNegLex) {
         lexHits.forEach((kw) => {
           const el = document.createElement("span");
@@ -974,11 +979,11 @@
           el.style.borderColor = "rgba(251, 191, 36, 0.5)";
           el.style.color = "#fde68a";
           el.textContent = kw;
-          chips.appendChild(el);
+          chipsYellow.appendChild(el);
         });
       }
-      if (!chips.innerHTML) {
-        chips.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None detected</span>';
+      if (!chipsYellow.innerHTML) {
+        chipsYellow.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None</span>';
       }
 
       const lit = sc.literature_aggregated_effects || {};

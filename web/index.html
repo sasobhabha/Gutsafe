@@ -116,7 +116,7 @@
       border-bottom-color: var(--accent);
     }
     .about-pane .card {
-      max-width: 680px;
+      max-width: 900px;
     }
     .about-pane h3 {
       font-size: 0.95rem;
@@ -433,6 +433,18 @@
     }
     details.ingredients summary:hover { color: var(--text); }
     details.ingredients[open] summary { border-bottom: 1px solid var(--border); }
+    details.reveal-details {
+      margin-top: 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    details.reveal-details summary {
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+    }
+    details.reveal-details .reveal-content {
+      padding: 1rem;
+    }
     details.ingredients pre {
       padding: 1rem;
       white-space: pre-wrap;
@@ -642,11 +654,18 @@
         </div>
       </div>
 
-      <p class="section-title">Additive Analysis</p>
+      <details class="ingredients">
+        <summary>Reveal Analysis Details</summary>
+<p class="section-title">Additive Analysis</p>
       <div class="chips" id="chips"></div>
 
-      <p class="section-title">Microbiome Impact Estimates</p>
-      <div class="fx-grid" id="fxLit"></div>
+      <details class="ingredients reveal-details">
+        <summary>Reveal Analysis Details</summary>
+        <div class="reveal-content">
+          <p class="section-title">Full Microbiome Impact</p>
+          <div class="fx-grid" id="fxLit"></div>
+        </div>
+      </details>
 
       <details class="ingredients">
         <summary>View Full Ingredients List</summary>

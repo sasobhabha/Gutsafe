@@ -909,10 +909,12 @@
       const ring = $("scoreRing");
       ring.style.setProperty("--p", Math.max(0, Math.min(100, wb)));
       // Color based on score
-      if (wb >= 70) {
+      if (wb >= 90) {
         ring.style.setProperty("--color", "var(--accent)");
-      } else if (wb >= 40) {
+      } else if (wb >= 76) {
         ring.style.setProperty("--color", "var(--warn)");
+      } else if (wb >= 61) {
+        ring.style.setProperty("--color", "#f97316");
       } else {
         ring.style.setProperty("--color", "var(--danger)");
       }

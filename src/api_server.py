@@ -22,6 +22,9 @@ from product_sources import (
     fetch_open_food_facts,
     fetch_smartlabel_label_insight,
     fetch_usda_fdc_branded,
+    fetch_walmart_product,
+    fetch_target_product,
+    fetch_kroger_product,
     merge_product,
     smartlabel_configured,
     UpstreamRateLimited,
@@ -41,7 +44,9 @@ app.add_middleware(
 def normalize_barcode(barcode: str) -> str:
     digits = re.sub(r"\D", "", barcode or "")
     if len(digits) < 8:
-        raise HTTPException(status_code=400, detail="Barcode must contain at least 8 digits.")
+        raise HTTPException(
+            status_code=400, detail="Barcode must contain at least 8 digits."
+        )
     if len(digits) > 14:
         digits = digits[-14:]
     return digits
@@ -101,6 +106,32 @@ def scan_barcode(
         except requests.RequestException as e:
             sl_err = str(e)
 
+    # Fallback: supermarket scrapers if OFF and USDA fail
+    walmart = None
+    target = None
+    kroger = None
+    if off is None and usda is None:
+        try:
+            walmart = fetch_walmart_product(code)
+        except Exception:
+            pass
+        if walmart and walmart.get("ingredients_text"):
+            off = walmart  # Use as primary fallback
+        else:
+            try:
+                target = fetch_target_product(code)
+            except Exception:
+                pass
+            if target and target.get("ingredients_text"):
+                off = target
+            else:
+                try:
+                    kroger = fetch_kroger_product(code)
+                except Exception:
+                    pass
+                if kroger and kroger.get("ingredients_text"):
+                    off = kroger
+
     # If upstreams are rate-limiting or unreachable, return a temporary error instead of "not found".
     off_msg = (off_err or "").lower()
     usda_msg = (usda_err or "").lower()
@@ -121,22 +152,15 @@ def scan_barcode(
                 "message": "Upstream ingredient databases are temporarily unavailable (network/rate limit).",
                 "open_food_facts": off_err,
                 "usda_fdc": usda_err,
-                "smartlabel": "not configured" if not smartlabel_configured() else sl_err,
+                "smartlabel": "not configured"
+                if not smartlabel_configured()
+                else sl_err,
                 "fix": "Set USDA_FDC_API_KEY on the API host to avoid DEMO_KEY limits; retry in a minute; or disable USDA with use_usda=false.",
             },
         )
 
     if off is None and usda is None and sl is None:
-        parts = ["Product not found in Open Food Facts, USDA FoodData Central (Branded), or SmartLabel (Label Insight)."]
-        if off_err:
-            parts.append(f"Open Food Facts error: {off_err}")
-        if usda_err:
-            parts.append(f"USDA FDC error: {usda_err}")
-        if sl_err:
-            parts.append(f"SmartLabel error: {sl_err}")
-        if not smartlabel_configured():
-            parts.append("SmartLabel not configured (set SMARTLABEL_API_KEY + SMARTLABEL_CONFIGURATION_ID).")
-        raise HTTPException(status_code=404, detail=" ".join(parts)[:1200])
+        raise HTTPException(status_code=404, detail="Product not found")
 
     merged = merge_product(code, off, usda, sl)
     ing = merged.get("ingredients_text") or ""
@@ -159,7 +183,11 @@ def scan_barcode(
         "usda_fdc_id": merged.get("usda_fdc_id"),
         "usda_gtin_upc": merged.get("usda_gtin_upc"),
         "smartlabel_upc": merged.get("smartlabel_upc"),
-        "source_errors": {"open_food_facts": off_err, "usda_fdc": usda_err, "smartlabel": sl_err},
+        "source_errors": {
+            "open_food_facts": off_err,
+            "usda_fdc": usda_err,
+            "smartlabel": sl_err,
+        },
         "warning": warning,
         "score": score,
     }

@@ -30,6 +30,13 @@ OFF_HEADERS = {
     "Accept": "application/json",
 }
 
+# Fallback: Walmart product page scraper (no API key needed)
+Walmart_PRODUCT = "https://www.walmart.com/ip/{barcode}"
+# Fallback: Target product page scraper
+Target_PRODUCT = "https://www.target.com/p/{barcode}"
+# Fallback: Kroger product page
+Kroger_PRODUCT = "https://www.kroger.com/p/{barcode}"
+
 FDC_SEARCH = "https://api.nal.usda.gov/fdc/v1/foods/search"
 FDC_FOOD = "https://api.nal.usda.gov/fdc/v1/food/{fdc_id}"
 
@@ -366,9 +373,7 @@ def merge_product(
 
     warnings: list[str] = []
     if not ing.strip():
-        warnings.append(
-            "No ingredient list from Open Food Facts, USDA, or SmartLabel — score reflects empty label (not real risk)."
-        )
+        warnings.append("Product not found")
 
     category = (usda or {}).get("category") or ""
     if smartlabel and (smartlabel.get("category") or "").strip():
@@ -400,3 +405,144 @@ def merge_product(
         "smartlabel_allergen_advisory": " ".join(adv) if adv else "",
         "warnings": warnings,
     }
+
+
+def fetch_walmart_product(barcode: str) -> dict[str, Any] | None:
+    """Scrape Walmart product page for ingredients (fallback when OFF/USDA fail)."""
+    import re
+    from bs4 import BeautifulSoup
+
+    s = _session()
+    url = f"https://www.walmart.com/ip/{barcode}"
+    try:
+        r = s.get(url, timeout=10)
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        product_name = None
+        ingredients = None
+        brand = None
+        # Try to find product name
+        title = soup.find("h1", {"itemprop": "name"}) or soup.find("h1")
+        if title:
+            product_name = title.get_text(strip=True)
+        # Find ingredients - Walmart uses JSON-LD script
+        scripts = soup.find_all("script", type="application/ld+json")
+        for script in scripts:
+            try:
+                data = json.loads(script.string)
+                if isinstance(data, dict):
+                    if data.get("@type") == "Product":
+                        product_name = product_name or data.get("name")
+                        recipe = data.get("recipeIngredient") or data.get("ingredients")
+                        if recipe:
+                            ingredients = (
+                                ", ".join(recipe)
+                                if isinstance(recipe, list)
+                                else recipe
+                            )
+                        break
+                    elif isinstance(data, list):
+                        for item in data:
+                            if item.get("@type") == "Product":
+                                product_name = product_name or item.get("name")
+                                recipe = item.get("recipeIngredient") or item.get(
+                                    "ingredients"
+                                )
+                                if recipe:
+                                    ingredients = (
+                                        ", ".join(recipe)
+                                        if isinstance(recipe, list)
+                                        else recipe
+                                    )
+                                break
+            except Exception:
+                pass
+        # Fallback: look for ingredients in div/data attributes
+        if not ingredients:
+            ing_div = soup.find("div", {"data-testid": "product-ingredients"})
+            if ing_div:
+                ingredients = ing_div.get_text(strip=True)
+        if not product_name:
+            return None
+        return {
+            "product_name": product_name,
+            "brands": brand or "",
+            "ingredients_text": ingredients or "",
+            "image_url": "",
+        }
+    except Exception:
+        return None
+
+
+def fetch_target_product(barcode: str) -> dict[str, Any] | None:
+    """Scrape Target product page for ingredients (fallback when OFF/USDA fail)."""
+    from bs4 import BeautifulSoup
+
+    s = _session()
+    # Target uses UPC in path, may need to find product slug
+    url = f"https://www.target.com/p/{barcode}"
+    try:
+        r = s.get(url, timeout=10)
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Target has JSON-LD too
+        scripts = soup.find_all("script", type="application/ld+json")
+        for script in scripts:
+            try:
+                data = json.loads(script.string)
+                if isinstance(data, dict) and data.get("@type") == "Product":
+                    return {
+                        "product_name": data.get("name", ""),
+                        "brands": "",
+                        "ingredients_text": ", ".join(data.get("recipeIngredient", []))
+                        if data.get("recipeIngredient")
+                        else "",
+                        "image_url": data.get("image", [{}])[0].get("url", "")
+                        if data.get("image")
+                        else "",
+                    }
+            except Exception:
+                pass
+        return None
+    except Exception:
+        return None
+
+
+def fetch_kroger_product(barcode: str) -> dict[str, Any] | None:
+    """Scrape Kroger product page for ingredients (fallback when OFF/USDA fail)."""
+    from bs4 import BeautifulSoup
+
+    s = _session()
+    url = f"https://www.kroger.com/p/{barcode}"
+    try:
+        r = s.get(url, timeout=10)
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        # Kroger has JSON-LD
+        scripts = soup.find_all("script", type="application/ld+json")
+        for script in scripts:
+            try:
+                data = json.loads(script.string)
+                if isinstance(data, dict) and data.get("@type") == "Product":
+                    return {
+                        "product_name": data.get("name", ""),
+                        "brands": data.get("brand", ""),
+                        "ingredients_text": ", ".join(data.get("recipeIngredient", []))
+                        if data.get("recipeIngredient")
+                        else "",
+                        "image_url": data.get("image", [{}])[0].get("url", "")
+                        if data.get("image")
+                        else "",
+                    }
+            except Exception:
+                pass
+        return None
+    except Exception:
+        return None
+
+
+# Import json for fallback scrapers
+import json

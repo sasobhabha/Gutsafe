@@ -24,7 +24,7 @@ jobs:
       - name: Build Jekyll site using Docker
         uses: docker://jekyll/jekyll
         with:
-          args: jekyll build --trace
+          args: jekyll build --trace --source web --destination web/_site
         env:
           JEKYLL_ENV: production
           JEKYLL_ROOTLESS: true
@@ -32,7 +32,7 @@ jobs:
       - name: Upload built site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: web/_site
 
   deploy:
     runs-on: ubuntu-latest

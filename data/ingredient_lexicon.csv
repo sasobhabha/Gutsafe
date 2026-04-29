@@ -1,0 +1,124 @@
+keyword,bifido_delta,lacto_delta,akkermansia_delta,enterobacteriaceae_delta,diversity_delta,scfa_delta,barrier_risk,notes
+high fructose corn syrup,-0.04,-0.03,-0.02,0.08,-0.06,-0.05,0.12,rapidly fermentable sugar; dysbiosis risk in high-dose animal/human meal studies
+corn syrup,-0.03,-0.02,-0.02,0.06,-0.05,-0.04,0.09,refined sugar stream; fermentation load
+invert sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.07,similar to other refined sugars
+maltodextrin,-0.04,-0.03,-0.02,0.06,-0.05,-0.04,0.08,rapidly absorbed; microbial substrate shifts
+brown sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,sucrose-based
+cane sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,sucrose
+powdered sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,sucrose + starch
+invert cane sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,
+turbinado sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,
+dextrose,-0.03,-0.02,-0.02,0.05,-0.04,-0.03,0.07,monosaccharide
+glucose syrup,-0.03,-0.02,-0.02,0.06,-0.05,-0.04,0.08,
+glucose,-0.02,-0.02,-0.01,0.04,-0.03,-0.02,0.05,
+fructose,-0.02,-0.02,-0.01,0.05,-0.03,-0.03,0.06,
+sucrose,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,table sugar
+honey,-0.02,-0.02,-0.01,0.04,-0.03,-0.02,0.05,mixed mono/disaccharides
+molasses,-0.02,-0.02,-0.01,0.04,-0.03,-0.02,0.05,
+agave syrup,-0.03,-0.02,-0.02,0.06,-0.04,-0.03,0.07,high fructose load
+maple syrup,-0.02,-0.02,-0.01,0.04,-0.03,-0.02,0.05,
+sugar,-0.03,-0.02,-0.01,0.05,-0.04,-0.03,0.06,generic sucrose wording
+whole grain oats,0.04,0.03,0.02,-0.02,0.05,0.06,-0.04,beta-glucan fiber; SCFA-positive human data
+rolled oats,0.04,0.03,0.02,-0.02,0.05,0.06,-0.04,
+oat flour,0.03,0.02,0.02,-0.02,0.04,0.05,-0.03,
+whole wheat flour,0.03,0.02,0.01,-0.02,0.04,0.04,-0.03,fiber vs refined wheat
+whole grain wheat,0.03,0.02,0.01,-0.02,0.04,0.04,-0.03,
+wheat flour,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.05,refined starch stream
+enriched flour,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.05,refined
+bleached flour,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.05,
+rice flour,-0.01,-0.01,0.00,0.02,-0.02,-0.02,0.03,refined starch
+tapioca starch,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.04,pure starch
+potato starch,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.04,
+corn starch,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.04,
+modified corn starch,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.05,
+modified food starch,-0.02,-0.01,-0.01,0.03,-0.03,-0.02,0.05,
+skim milk,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,fermentable lactose + protein
+whole milk,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
+milk powder,0.01,0.01,0.00,-0.01,0.00,0.01,-0.01,
+nonfat milk,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
+condensed milk,0.00,0.00,0.00,0.02,-0.02,-0.01,0.04,high sugar load in product context
+cream,0.00,0.00,0.00,0.01,-0.01,0.00,0.02,saturated fat context
+butter,0.00,0.00,0.00,0.01,-0.01,0.00,0.02,
+whey protein,0.01,0.01,0.00,-0.01,0.01,0.02,-0.01,protein fermentation
+whey,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
+milk protein,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
+casein,0.00,0.00,0.00,0.00,0.00,0.01,-0.01,
+lactose,0.02,0.02,0.01,-0.01,0.01,0.02,-0.02,mild prebiotic; increases bifidobacterial in humans
+yogurt powder,0.02,0.02,0.01,-0.01,0.02,0.02,-0.02,fermented dairy residue
+palm oil,0.00,-0.01,-0.02,0.02,-0.02,-0.02,0.06,saturated fat microbiome literature mixed
+palm kernel oil,0.00,-0.01,-0.02,0.02,-0.02,-0.02,0.06,
+coconut oil,0.00,-0.01,-0.01,0.02,-0.02,-0.02,0.05,
+soybean oil,0.00,0.00,-0.01,0.01,-0.01,-0.01,0.03,omega-6 rich; context-dependent
+canola oil,0.00,0.00,0.00,0.01,-0.01,-0.01,0.02,
+sunflower oil,0.00,0.00,0.00,0.01,-0.01,-0.01,0.02,
+vegetable oil,0.00,0.00,-0.01,0.01,-0.01,-0.01,0.03,generic blend
+soy lecithin,-0.02,-0.02,-0.02,0.03,-0.02,-0.02,0.08,phospholipid emulsifier; lighter than P80 in rubric
+sunflower lecithin,-0.02,-0.02,-0.02,0.03,-0.02,-0.02,0.08,
+lecithin,-0.02,-0.02,-0.02,0.03,-0.02,-0.02,0.08,
+cocoa,0.02,0.01,0.01,-0.01,0.02,0.02,-0.02,cocoa solids / powder context
+cocoa powder,0.02,0.01,0.01,-0.01,0.02,0.02,-0.02,polyphenol-associated favorable signals
+cocoa butter,0.00,0.00,0.00,0.01,-0.01,0.00,0.02,
+chocolate,-0.01,-0.01,0.00,0.02,-0.02,-0.02,0.05,sugar + fat matrix
+unsweetened chocolate,-0.01,-0.01,0.00,0.02,-0.02,-0.02,0.04,
+peanut butter,0.01,0.01,0.00,-0.01,0.02,0.02,-0.02,legume fiber + fat
+peanuts,0.01,0.01,0.00,-0.01,0.02,0.02,-0.02,
+almonds,0.01,0.01,0.01,-0.01,0.02,0.02,-0.02,
+hazelnuts,0.01,0.01,0.01,-0.01,0.02,0.02,-0.02,
+rice,0.00,0.00,0.00,0.02,-0.02,-0.02,0.03,refined grain default
+brown rice,0.02,0.01,0.01,-0.01,0.03,0.03,-0.03,more fiber
+barley malt extract,-0.02,-0.02,-0.01,0.04,-0.03,-0.03,0.06,sugar + flavor
+malt extract,-0.02,-0.02,-0.01,0.04,-0.03,-0.03,0.06,
+yeast,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,
+baking soda,0.00,0.00,0.00,0.00,0.00,0.00,0.01,minimal
+salt,0.00,0.00,0.00,0.00,0.00,0.00,0.00,neutral at food doses
+sea salt,0.00,0.00,0.00,0.00,0.00,0.00,0.00,
+water,0.00,0.00,0.00,0.00,0.00,0.00,0.00,carrier
+natural flavor,0.00,0.00,0.00,0.01,-0.01,-0.01,0.04,unknown mixture; small precaution
+artificial flavor,0.00,0.00,0.00,0.01,-0.01,-0.01,0.05,unknown mixture
+natural flavors,0.00,0.00,0.00,0.01,-0.01,-0.01,0.04,
+artificial flavors,0.00,0.00,0.00,0.01,-0.01,-0.01,0.05,
+vanilla extract,0.00,0.00,0.00,0.00,0.00,0.00,0.01,
+cinnamon,0.01,0.01,0.00,-0.01,0.01,0.01,-0.01,polyphenols mild
+coffee,0.00,0.00,0.00,0.01,-0.01,0.00,0.02,polyphenols + caffeine context
+tea,0.01,0.00,0.00,-0.01,0.01,0.01,-0.01,
+apple puree,0.02,0.01,0.00,-0.01,0.02,0.02,-0.02,fruit fiber + sugar mix
+date paste,0.01,0.00,0.00,0.02,-0.02,-0.02,0.04,natural sugar
+raisin,0.01,0.00,0.00,0.02,-0.02,-0.02,0.03,
+pea protein,0.02,0.02,0.01,-0.01,0.02,0.03,-0.02,plant protein fermentation
+rice protein,0.01,0.01,0.00,0.00,0.01,0.02,-0.01,
+soy protein,0.01,0.01,0.00,0.01,0.01,0.02,-0.01,
+gelatin,0.00,0.00,0.00,0.00,0.00,0.01,0.02,animal protein hydrolysate
+pectin,0.02,0.01,0.01,-0.01,0.02,0.02,-0.02,soluble fiber
+inulin,0.05,0.04,0.03,-0.02,0.04,0.05,-0.05,prebiotic fructan
+chicory root fiber,0.05,0.04,0.03,-0.02,0.04,0.05,-0.05,
+oligofructose,0.04,0.03,0.02,-0.02,0.03,0.04,-0.04,
+polydextrose,0.02,0.02,0.01,-0.01,0.02,0.02,-0.02,fiber additive
+resistant starch,0.03,0.02,0.02,-0.02,0.03,0.04,-0.03,
+cellulose,0.01,0.01,0.00,0.00,0.01,0.01,-0.01,insoluble fiber minimal fermentation
+mono- and diglycerides,-0.03,-0.03,-0.04,0.05,-0.04,-0.03,0.12,emulsifier class (lighter than P80)
+mono and diglycerides,-0.03,-0.03,-0.04,0.05,-0.04,-0.03,0.12,
+diglycerides,-0.03,-0.03,-0.04,0.05,-0.04,-0.03,0.12,
+beef,-0.01,-0.01,-0.01,0.03,-0.02,-0.02,0.06,heme / TMAO context at high intake
+pork,-0.01,-0.01,-0.01,0.03,-0.02,-0.02,0.06,
+processed meat,-0.10,-0.10,-0.08,0.15,-0.18,-0.12,0.30,IARC Group 1 carcinogen; reduces diversity and increases TMAO and NOC
+cured meat,-0.10,-0.10,-0.08,0.15,-0.18,-0.12,0.28,nitrite and heme; dysbiosis and lipid peroxidation
+ice cream,-0.06,-0.06,-0.05,0.10,-0.12,-0.08,0.20,UPF with emulsifiers; inversely linked to diversity
+chicken,0.00,0.00,0.00,0.02,-0.01,-0.01,0.03,
+turkey,0.00,0.00,0.00,0.02,-0.01,-0.01,0.03,
+fish,0.01,0.00,0.00,0.01,0.00,0.02,-0.01,omega-3 favorable context
+tuna,0.01,0.00,0.00,0.01,0.00,0.02,-0.01,
+egg,0.00,0.00,0.00,0.01,-0.01,0.01,0.02,
+egg white,0.00,0.00,0.00,0.01,-0.01,0.01,0.02,
+cheese,0.01,0.01,0.00,0.01,0.00,0.02,-0.01,fermented dairy
+mozzarella,0.01,0.01,0.00,0.01,0.00,0.02,-0.01,
+cellulose powder,0.01,0.01,0.00,0.00,0.01,0.01,-0.01,fiber
+tricalcium phosphate,0.00,0.00,0.00,0.00,0.00,0.00,0.01,mineral
+dipotassium phosphate,0.00,0.00,0.00,0.00,0.00,0.00,0.01,
+sodium phosphate,0.00,0.00,0.00,0.01,-0.01,-0.01,0.03,
+potassium chloride,0.00,0.00,0.00,0.00,0.00,0.00,0.01,
+malt barley flour,0.01,0.01,0.00,-0.01,0.02,0.02,-0.02,
+rye flour,0.02,0.01,0.01,-0.01,0.03,0.03,-0.03,fiber
+flaxseed,0.04,0.03,0.02,-0.02,0.04,0.04,-0.04,fiber + ALA
+chia seed,0.04,0.03,0.02,-0.02,0.04,0.04,-0.04,
+quinoa,0.03,0.02,0.01,-0.01,0.03,0.03,-0.03,
+potato flakes,-0.01,-0.01,0.00,0.02,-0.02,-0.02,0.03,starch

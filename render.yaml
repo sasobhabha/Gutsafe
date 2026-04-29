@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: gutsafe-api
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: "uvicorn api_server:app --host 0.0.0.0 --port $PORT"
+    autoDeploy: true
+    envVars:
+      - key: PYTHONPATH
+        value: /app/src
+      - key: USDA_FDC_API_KEY
+        fromDatabase:
+          name: gutsafe-db
+          property: usda_api_key
+  - type: static
+    name: gutsafe-web
+    plan: free
+    buildCommand: echo "No build needed"
+    publishPath: ./web
+    autoDeploy: true

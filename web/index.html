@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GutSafe AI</title>
+  <meta name="description" content="Scan food barcodes to analyze ingredients and get gut health scores" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <style>
+    :root {
+      --bg: #0a0f0d;
+      --bg-card: #141c18;
+      --bg-elevated: #1a241f;
+      --border: #243028;
+      --border-subtle: #1e2a23;
+      --text: #f0f5f2;
+      --text-secondary: #9aab9f;
+      --accent: #4ade80;
+      --accent-soft: #22c55e;
+      --accent-muted: rgba(74, 222, 128, 0.12);
+      --warn: #fbbf24;
+      --warn-muted: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+      --danger-muted: rgba(248, 113, 113, 0.12);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 197, 94, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(74, 222, 128, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+    }
+    .logo-icon svg { width: 24px; height: 24px; color: var(--bg); }
+    header h1 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0.5rem auto 0;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.6rem 1.1rem;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      box-shadow: none;
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .about-pane .card {
+      max-width: 900px;
+    }
+    .about-pane h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+    }
+    .about-pane p, .about-pane li {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .about-pane ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .about-pane li { margin-bottom: 0.35rem; }
+    .about-pane strong { color: var(--text); }
+    .grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+    @media (min-width: 768px) {
+      .grid { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-muted);
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 20px; height: 20px; color: var(--accent); }
+    .card h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .card h2 span {
+      display: block;
+      font-family: "Inter", sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+    }
+    .field { margin-bottom: 1rem; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]::placeholder { color: var(--text-secondary); opacity: 0.6; }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent-muted);
+    }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1.25rem;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button svg { width: 18px; height: 18px; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+      color: var(--bg);
+      box-shadow: 0 2px 12px rgba(74, 222, 128, 0.25);
+    }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(74, 222, 128, 0.35); }
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--border-subtle); }
+    #reader {
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      min-height: 200px;
+      background: var(--bg);
+      margin-bottom: 1rem;
+    }
+    #reader video { border-radius: var(--radius-sm); }
+    .hint {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+    .status {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .status svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .status.err {
+      display: flex;
+      background: var(--danger-muted);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: #fca5a5;
+    }
+    .status.ok {
+      display: flex;
+      background: var(--accent-muted);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #86efac;
+    }
+
+    /* Results */
+    .results {
+      margin-top: 1.5rem;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .results-header h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 1.35rem;
+    }
+    .warn-banner {
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--warn-muted);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      color: #fde68a;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+    .warn-banner svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .warn-banner[hidden] { display: none; }
+    .product-layout {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .product-info { flex: 1; min-width: 200px; }
+    .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 6px;
+      flex-shrink: 0;
+    }
+    .product-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+    .product-brand {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .product-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+    .product-meta span { display: block; margin-top: 0.15rem; }
+    .score-container {
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .score-ring {
+      --p: 50;
+      --color: var(--accent);
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(var(--color) calc(var(--p) * 1%), var(--border) 0);
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+    }
+    .score-ring::after {
+      content: "";
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      position: absolute;
+    }
+    .score-ring span {
+      position: relative;
+      z-index: 1;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .score-label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 0.6rem;
+      line-height: 1.4;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 1.5rem 0 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .chip {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .chip.detected {
+      background: var(--danger-muted);
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fca5a5;
+    }
+    .chip.safe {
+      background: var(--accent-muted);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: #86efac;
+    }
+    .fx-grid {
+      display: grid;
+      gap: 0.4rem;
+    }
+.fx-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.85rem;
+    }
+    .fx-row span:first-child {
+      color: var(--text-secondary);
+    }
+    details.ingredients {
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+    }
+    details.ingredients summary {
+      cursor: pointer;
+      padding: 0.75rem 1rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+    details.ingredients summary:hover { color: var(--text); }
+    details.ingredients[open] summary { border-bottom: 1px solid var(--border); }
+    details.reveal-details {
+      margin-top: 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    details.reveal-details summary {
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+    }
+    details.reveal-details .reveal-content {
+      padding: 1.5rem;
+    }
+    details.ingredients pre {
+      padding: 1rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.8rem;
+      color: var(--text);
+      font-family: "SF Mono", "Fira Code", monospace;
+      line-height: 1.6;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .additive-table-wrap {
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .additive-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .additive-table th {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+    .additive-table th:first-child { text-align: left; }
+    .additive-table td {
+      padding: 0.45rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .additive-table td:first-child { text-align: left; color: var(--text); }
+    .additive-table tbody tr:last-child td { border-bottom: none; }
+    .additive-table tbody tr:hover td { background: var(--bg-elevated); }
+    .additive-table td.neg { color: var(--danger); font-weight: 600; }
+    .additive-table td.pos { color: var(--accent); font-weight: 600; }
+    .additive-table tr.row-good td:first-child { color: var(--accent); }
+    .lit-section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 1.1rem 0 0.3rem;
+    }
+    .lit-list {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .lit-list li {
+      margin-bottom: 0.6rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .lit-list a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .lit-list a:hover { text-decoration: underline; }
+    .disclaimer {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img class="logo-icon" src="https://i.postimg.cc/vZxxKpX1/Copilot-20260418-232604.png" alt="GutSafe AI" style="width:44px;height:44px;border-radius:12px;object-fit:cover;" />
+        <h1>GutSafe AI</h1>
+      </div>
+      <p>Scan food barcodes to analyze ingredients and discover how they may affect your gut health.</p>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab active" id="tabScanner" data-tab="scanner">Scanner</button>
+      <button class="tab" id="tabAbout" data-tab="about">About</button>
+    </nav>
+
+    <div id="paneScanner">
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+              <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+              <line x1="7" y1="8" x2="7" y2="16"/>
+              <line x1="11" y1="8" x2="11" y2="16"/>
+              <line x1="15" y1="8" x2="15" y2="12"/>
+              <line x1="17" y1="8" x2="17" y2="16"/>
+            </svg>
+          </div>
+          <h2>Enter Barcode<span>Type or paste a product barcode</span></h2>
+        </div>
+        <div class="field">
+          <label for="barcode">Product Barcode (UPC/EAN)</label>
+          <input type="text" id="barcode" placeholder="e.g. 078742315805" autocomplete="off" inputmode="numeric" />
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn-primary" id="btnLookup">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            Analyze Product
+          </button>
+        </div>
+        <div id="msg" class="status" role="status"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </div>
+          <h2>Scan with Camera<span>Use your device camera to scan</span></h2>
+        </div>
+        <div id="reader" aria-label="Barcode camera view"></div>
+        <div class="btn-group">
+          <button type="button" class="btn-primary" id="btnStartCam">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Start Camera
+          </button>
+          <button type="button" class="btn-secondary" id="btnStopCam" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="6" width="12" height="12" rx="2"/>
+            </svg>
+            Stop
+          </button>
+        </div>
+        <p class="hint">Position the barcode within the frame. Works best with good lighting.</p>
+      </div>
+    </div>
+
+    <section class="results card" id="results" hidden>
+      <div class="results-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h2 id="resTitle">Analysis Complete</h2>
+      </div>
+
+      <div id="warnBox" class="warn-banner" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span id="warnText"></span>
+      </div>
+
+      <div class="product-layout">
+        <img id="resImg" class="product-image" alt="" hidden />
+        <div class="product-info">
+          <div class="product-name" id="resName"></div>
+          <div class="product-brand" id="resBrands"></div>
+          <div class="product-meta">
+            <span id="resBarcode"></span>
+            <span id="resSources"></span>
+            <span id="resCategory" hidden></span>
+          </div>
+        </div>
+        <div class="score-container">
+          <div class="score-ring" id="scoreRing"><span id="scoreVal">-</span></div>
+          <div class="score-label">Gut Health Score<br/>(0-100)</div>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:1rem">Additive Analysis</p>
+      <div class="chips" id="chips"></div>
+
+      <details class="ingredients reveal-details">
+        <summary>Reveal Analysis Details</summary>
+        <div class="reveal-content">
+          <p class="section-title">Additional Concerns</p>
+          <div class="chips" id="chipsYellow"></div>
+          <p class="section-title" style="margin-top:1rem">Microbiome Impact</p>
+          <div class="fx-grid" id="fxLit"></div>
+        </div>
+      </details>
+
+      <details class="ingredients">
+        <summary>View Full Ingredients List</summary>
+        <pre id="resIngr"></pre>
+      </details>
+      <details class="ingredients" id="srcBreakdown" hidden>
+        <summary>Ingredients by Data Source</summary>
+        <pre id="resIngrBySrc"></pre>
+      </details>
+    </section>
+    </div><!-- end #paneScanner -->
+
+    <div id="paneAbout" class="about-pane" hidden>
+      <div class="card">
+        <p>GutSafe AI analyzes food products to estimate their impact on gut health based on their ingredients.</p>
+
+        <h3>Scoring Pipeline</h3>
+        <p>The Gut Health Score (0–100) is produced by a 6-step pipeline run on every product's ingredient list:</p>
+        <ol class="lit-list">
+          <li><strong>Additive detection.</strong> The ingredient text is scanned for 24 regulated additives using regex patterns and EU E-number synonyms. Each detected additive sets a binary flag (0 or 1).</li>
+          <li><strong>Literature delta accumulation.</strong> Every flagged additive contributes its curated per-target deltas (see table below) to a running sum across all 7 microbiome dimensions. Multiple additives stack additively.</li>
+          <li><strong>Ingredient lexicon scan.</strong> The text is split by comma into segments. Each segment is matched against a 120-entry lexicon (longest match wins). One contribution per segment is added to the running sum — this captures beneficial ingredients (whole grains, legumes, fermented foods) as well as harmful ones not on the additive list.</li>
+          <li><strong>Ultra-processed proxy.</strong> If the ingredient list has more than 6 comma-separated segments, a small penalty of <code>+0.0035 × (n − 6)</code> is added to <em>Gut Barrier Risk</em>, capped at +0.14. This reflects the general association between ingredient-list length and ultra-processing.</li>
+          <li><strong>Microbiome Stress Index.</strong> The 7 merged deltas are collapsed into a single stress score (0–∞) using weighted components:
+            <ul>
+              <li><em>Beneficial loss</em> (weight 0.26): sum of absolute negative deltas for Bifidobacterium, Lactobacillus, and Akkermansia</li>
+              <li><em>Opportunist growth</em> (weight 0.17): positive delta of Enterobacteriaceae (clamped ≥ 0)</li>
+              <li><em>Ecosystem loss</em> (weight 0.17): sum of absolute negative deltas for Diversity and SCFA</li>
+              <li><em>Barrier risk</em> (weight 0.40): raw barrier risk value, clamped to [0, 1.2]</li>
+            </ul>
+          </li>
+          <li><strong>Final score.</strong> The ML model (PyTorch MLP, hidden layers [64, 32]) trained on 199 real products provides a secondary predicted-effects estimate which is merged with the lexicon before final scoring.</li>
+        </ol>
+
+        <h3>Microbiome Dimensions</h3>
+        <p>All 7 target dimensions and their role in the score:</p>
+        <ul>
+          <li><strong>Bifidobacterium Δ</strong> — Negative values reduce a keystone probiotic genus linked to immune regulation, IgA production, and pathogen exclusion.</li>
+          <li><strong>Lactobacillus Δ</strong> — Negative values reduce lactic-acid bacteria that maintain colonic pH, compete with pathogens, and enhance nutrient bioavailability.</li>
+          <li><strong>Akkermansia Δ</strong> — Negative values reduce the mucin-layer coloniser whose abundance correlates with intact gut barrier and metabolic health.</li>
+          <li><strong>Enterobacteriaceae Δ</strong> — Positive values increase a family that contains opportunistic pathogens (E. coli, Klebsiella). Drives the opportunist weight.</li>
+          <li><strong>Diversity Δ</strong> — Negative values reduce overall ecosystem richness (Shannon index proxy). Low diversity is a consistent marker of dysbiosis.</li>
+          <li><strong>SCFA Δ</strong> — Negative values reduce short-chain fatty acid production (butyrate, propionate, acetate), which fuel colonocytes and regulate inflammation.</li>
+          <li><strong>Gut Barrier Risk</strong> — Positive values indicate increased intestinal permeability risk ("leaky gut"), which drives the highest-weighted component (0.40) of the stress score.</li>
+        </ul>
+        <p>Colors in the Microbiome Impact panel indicate severity of negative effect: <span style="color:var(--accent)">green</span> (no impact), <span style="color:#fde047">yellow</span> (Δ &gt; −0.5), <span style="color:#f97316">orange</span> (Δ &gt; −1.0), <span style="color:var(--danger)">red</span> (Δ ≤ −1.0).</p>
+
+        <h3>Flagged Ingredient Effects</h3>
+        <p>Exact per-target deltas used in Step 2, sourced from peer-reviewed literature:</p>
+        <div class="additive-table-wrap">
+          <table class="additive-table">
+            <thead>
+              <tr>
+                <th>Additive</th>
+                <th title="Bifidobacterium delta">Bifido</th>
+                <th title="Lactobacillus delta">Lacto</th>
+                <th title="Akkermansia delta">Akkerm.</th>
+                <th title="Enterobacteriaceae delta">Entero.</th>
+                <th title="Diversity delta">Div.</th>
+                <th title="SCFA delta">SCFA</th>
+                <th title="Gut Barrier Risk">Barrier</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Polysorbate 80 (E433)</td><td class="neg">−0.45</td><td class="neg">−0.40</td><td class="neg">−0.55</td><td class="pos">+0.50</td><td class="neg">−0.55</td><td class="neg">−0.45</td><td class="pos">0.95</td></tr>
+              <tr><td>CMC / Cellulose Gum (E466)</td><td class="neg">−0.25</td><td class="neg">−0.22</td><td class="neg">−0.40</td><td class="pos">+0.20</td><td class="neg">−0.35</td><td class="neg">−0.35</td><td class="pos">0.75</td></tr>
+              <tr><td>Polysorbate 60 (E435)</td><td class="neg">−0.30</td><td class="neg">−0.26</td><td class="neg">−0.35</td><td class="pos">+0.32</td><td class="neg">−0.35</td><td class="neg">−0.28</td><td class="pos">0.70</td></tr>
+              <tr><td>Red 40 / Allura Red (E129)</td><td class="neg">−0.18</td><td class="neg">−0.12</td><td class="neg">−0.08</td><td class="pos">+0.25</td><td class="neg">−0.20</td><td class="neg">−0.15</td><td class="pos">0.55</td></tr>
+              <tr><td>Carrageenan (E407)</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="pos">+0.08</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="pos">0.20</td></tr>
+              <tr><td>Sucralose (E955)</td><td class="neg">−0.15</td><td class="neg">−0.12</td><td class="neg">−0.05</td><td class="pos">+0.08</td><td class="neg">−0.08</td><td class="neg">−0.05</td><td class="pos">0.20</td></tr>
+              <tr><td>Saccharin (E954)</td><td class="neg">−0.10</td><td class="neg">−0.12</td><td class="neg">−0.04</td><td class="pos">+0.08</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="pos">0.25</td></tr>
+              <tr><td>Sodium Nitrite (E250)</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="pos">+0.12</td><td class="neg">−0.10</td><td class="neg">−0.08</td><td class="pos">0.25</td></tr>
+              <tr><td>Titanium Dioxide (E171)</td><td class="neg">−0.05</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">+0.05</td><td class="neg">−0.04</td><td class="pos">+0.02</td><td class="pos">0.15</td></tr>
+              <tr><td>Sodium Benzoate (E211)</td><td class="neg">−0.06</td><td class="neg">−0.05</td><td class="neg">−0.02</td><td class="pos">−0.04</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="pos">0.14</td></tr>
+              <tr><td>Potassium Sorbate (E202)</td><td class="neg">−0.08</td><td class="neg">−0.06</td><td class="neg">−0.03</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="neg">−0.08</td><td class="pos">0.18</td></tr>
+              <tr><td>Aspartame (E951)</td><td class="neg">−0.08</td><td class="neg">−0.10</td><td>0.00</td><td class="pos">+0.05</td><td class="neg">−0.05</td><td class="neg">−0.03</td><td class="pos">0.15</td></tr>
+              <tr><td>Acesulfame K (E950)</td><td class="neg">−0.06</td><td class="neg">−0.08</td><td class="neg">−0.02</td><td class="pos">+0.05</td><td class="neg">−0.05</td><td class="neg">−0.04</td><td class="pos">0.15</td></tr>
+              <tr><td>Tartrazine / Yellow 5 (E102)</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">+0.08</td><td class="neg">−0.06</td><td class="neg">−0.04</td><td class="pos">0.18</td></tr>
+              <tr><td>MSG (E621)</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td class="neg">−0.03</td><td class="pos">+0.04</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.12</td></tr>
+              <tr><td>Stevia / Steviol (E960)</td><td class="neg">−0.05</td><td class="neg">−0.06</td><td>0.00</td><td class="pos">+0.02</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.08</td></tr>
+              <tr><td>Xanthan Gum (E415)</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td class="pos">+0.04</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.12</td></tr>
+              <tr><td>Sorbitol (E420)</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td>0.00</td><td class="pos">+0.03</td><td class="neg">−0.04</td><td class="neg">−0.04</td><td class="pos">0.12</td></tr>
+              <tr><td>Maltitol (E965)</td><td class="neg">−0.03</td><td class="neg">−0.04</td><td>0.00</td><td class="pos">+0.03</td><td class="neg">−0.04</td><td class="neg">−0.03</td><td class="pos">0.10</td></tr>
+              <tr><td>Propylene Glycol (E1520)</td><td class="neg">−0.03</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">+0.04</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.10</td></tr>
+              <tr><td>Phosphoric Acid (E338)</td><td class="neg">−0.02</td><td class="neg">−0.02</td><td class="neg">−0.01</td><td class="pos">+0.02</td><td class="neg">−0.03</td><td class="neg">−0.02</td><td class="pos">0.08</td></tr>
+              <tr><td>Xylitol (E967)</td><td class="pos">+0.08</td><td class="neg">−0.04</td><td class="pos">+0.02</td><td class="neg">−0.02</td><td class="pos">+0.04</td><td class="pos">+0.06</td><td class="neg">−0.05</td></tr>
+              <tr><td>Citric Acid (E330)</td><td class="neg">−0.01</td><td class="neg">−0.01</td><td>0.00</td><td class="pos">+0.01</td><td class="neg">−0.02</td><td class="neg">−0.01</td><td class="pos">0.04</td></tr>
+              <tr class="row-good"><td>Guar Gum (E412)</td><td class="pos">+0.12</td><td class="pos">+0.08</td><td class="pos">+0.06</td><td class="neg">−0.06</td><td class="pos">+0.08</td><td class="pos">+0.15</td><td class="neg">−0.12</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.5rem;">Δ values represent estimated relative abundance / risk unit changes aggregated from published animal and human studies. Values are signed: negative = harmful, positive = beneficial. Barrier Risk: positive = higher permeability risk.</p>
+
+          <h3>Product Data Sources</h3>
+          <p>Product ingredient and label data is fetched live from:</p>
+          <ul>
+            <li><a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> — global crowdsourced food product database</li>
+            <li><a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">USDA FoodData Central</a> — branded foods database from the USDA National Agricultural Library</li>
+            <li><a href="https://www.smartlabel.org/" target="_blank" rel="noopener">SmartLabel / Label Insight</a> — CPG brand digital label disclosure data</li>
+          </ul>
+
+          <h3>Scientific Literature</h3>
+          <p>Ingredient microbiome effects are derived from the following peer-reviewed studies, organized by topic:</p>
+
+          <p class="lit-section-label">General Microbiome &amp; Diet</p>
+          <ol class="lit-list">
+            <li>Clemente et al. <em>The impact of the gut microbiota on human health: an integrative view.</em> Cell, 2012. <a href="https://doi.org/10.1016/j.cell.2012.01.035" target="_blank" rel="noopener">doi:10.1016/j.cell.2012.01.035</a></li>
+            <li>Sonnenburg &amp; Bäckhed. <em>Diet–microbiota interactions in health are controlled by intestinal nitrogen source constraints.</em> Nature, 2016. <a href="https://doi.org/10.1038/nature18849" target="_blank" rel="noopener">doi:10.1038/nature18849</a></li>
+            <li>Zinöcker &amp; Lindseth. <em>The Western Diet–Microbiome-Host Interaction and Its Role in Metabolic Disease.</em> Nutrients, 2018. <a href="https://doi.org/10.3390/nu10030365" target="_blank" rel="noopener">doi:10.3390/nu10030365</a></li>
+            <li>Wastyk et al. <em>Gut-microbiota-targeted diets modulate human immune status.</em> Cell, 2021. <a href="https://doi.org/10.1016/j.cell.2021.06.019" target="_blank" rel="noopener">doi:10.1016/j.cell.2021.06.019</a></li>
+          </ol>
+
+          <p class="lit-section-label">Dietary Fiber, Prebiotics &amp; SCFA</p>
+          <ol class="lit-list">
+            <li>Slavin. <em>Fiber and Prebiotics: Mechanisms and Health Benefits.</em> Nutrients, 2013. <a href="https://doi.org/10.3390/nu5041417" target="_blank" rel="noopener">doi:10.3390/nu5041417</a></li>
+            <li>Kovatcheva-Datchary et al. <em>Dietary Fiber-Induced Improvement in Glucose Metabolism Is Associated with Increased Abundance of Prevotella.</em> Cell Metabolism, 2015. <a href="https://doi.org/10.1016/j.cmet.2015.10.001" target="_blank" rel="noopener">doi:10.1016/j.cmet.2015.10.001</a></li>
+            <li>Desai et al. <em>A Dietary Fiber-Deprived Gut Microbiota Degrades the Colonic Mucus Barrier and Enhances Pathogen Susceptibility.</em> Cell, 2016. <a href="https://doi.org/10.1016/j.cell.2016.10.043" target="_blank" rel="noopener">doi:10.1016/j.cell.2016.10.043</a></li>
+            <li>Baxter et al. <em>Dynamics of Human Gut Microbiota and Short-Chain Fatty Acids in Response to Dietary Interventions with Three Fermentable Fibers.</em> mBio, 2019. <a href="https://doi.org/10.1128/mBio.02566-18" target="_blank" rel="noopener">doi:10.1128/mBio.02566-18</a></li>
+            <li>Dahl et al. <em>A dietary fiber supplement improves gut microbiota diversity.</em> ISME J, 2023. <a href="https://doi.org/10.1038/s41396-022-01355-3" target="_blank" rel="noopener">doi:10.1038/s41396-022-01355-3</a></li>
+          </ol>
+
+          <p class="lit-section-label">Artificial Sweeteners</p>
+          <ol class="lit-list">
+            <li>Suez et al. <em>Artificial sweeteners induce glucose intolerance by altering the gut microbiota.</em> Nature, 2014. <a href="https://doi.org/10.1038/nature13793" target="_blank" rel="noopener">doi:10.1038/nature13793</a></li>
+            <li>Bian et al. <em>Gut Microbiome Response to Sucralose and Its Potential Role in Inducing Liver Inflammation in Mice.</em> Front. Physiol., 2017. <a href="https://doi.org/10.3389/fphys.2017.00487" target="_blank" rel="noopener">doi:10.3389/fphys.2017.00487</a></li>
+            <li>Ruiz-Ojeda et al. <em>Effects of Sweeteners on the Gut Microbiota: A Review of Experimental Studies and Clinical Trials.</em> Adv. Nutr., 2019. <a href="https://doi.org/10.1093/advances/nmy037" target="_blank" rel="noopener">doi:10.1093/advances/nmy037</a></li>
+          </ol>
+
+          <p class="lit-section-label">Emulsifiers &amp; Food Additives</p>
+          <ol class="lit-list">
+            <li>Chassaing et al. <em>Dietary emulsifiers impact the mouse gut microbiota promoting colitis and metabolic syndrome.</em> Nature, 2015. <a href="https://doi.org/10.1038/nature14232" target="_blank" rel="noopener">doi:10.1038/nature14232</a></li>
+            <li>Bhattacharyya &amp; Tobacman. <em>Molecular signature of kappa-carrageenan mimics chondroitin-4-sulfate and dermatan sulfate and enables interaction with arylsulfatase B.</em> J. Nutr. Biochem., 2012. <a href="https://doi.org/10.1016/j.jnutbio.2011.05.012" target="_blank" rel="noopener">doi:10.1016/j.jnutbio.2011.05.012</a></li>
+            <li>Bettini et al. <em>Food-grade TiO2 impairs intestinal and systemic immune homeostasis, initiates preneoplastic lesions and promotes aberrant crypt development in the rat colon.</em> Sci. Rep., 2017. <a href="https://doi.org/10.1038/srep40373" target="_blank" rel="noopener">doi:10.1038/srep40373</a></li>
+            <li>Niaz et al. <em>Extensive use of monosodium glutamate: A threat to public health?</em> EXCLI J., 2018. <a href="https://doi.org/10.17179/excli2018-1092" target="_blank" rel="noopener">doi:10.17179/excli2018-1092</a></li>
+          </ol>
+
+          <p class="lit-section-label">Food Colorants</p>
+          <ol class="lit-list">
+            <li>He et al. <em>Food colorants metabolized by commensal bacteria promote colitis in mice with dysregulated expression of interleukin-23.</em> Cell Metabolism, 2021. <a href="https://doi.org/10.1016/j.cmet.2021.04.015" target="_blank" rel="noopener">doi:10.1016/j.cmet.2021.04.015</a></li>
+            <li>Kwon et al. <em>Chronic exposure to synthetic food colorant Allura Red AC promotes susceptibility to experimental colitis via intestinal serotonin in mice.</em> Nat. Commun., 2022. <a href="https://doi.org/10.1038/s41467-022-35309-y" target="_blank" rel="noopener">doi:10.1038/s41467-022-35309-y</a></li>
+          </ol>
+
+          <p class="lit-section-label">Preservatives</p>
+          <ol class="lit-list">
+            <li>Nagpal et al. <em>Distinct Gut Microbiota Signatures in Mice Treated with Commonly Used Food Preservatives.</em> Microorganisms, 2021. <a href="https://doi.org/10.3390/microorganisms9112311" target="_blank" rel="noopener">doi:10.3390/microorganisms9112311</a></li>
+            <li>Li et al. <em>Systematic evaluation of antimicrobial food preservatives on glucose metabolism and gut microbiota in healthy mice.</em> npj Science of Food, 2022. <a href="https://doi.org/10.1038/s41538-022-00158-y" target="_blank" rel="noopener">doi:10.1038/s41538-022-00158-y</a></li>
+            <li>Xiao et al. <em>Effects of potassium sorbate on systemic inflammation and gut microbiota in normal mice.</em> Food Chem. Toxicol., 2024. <a href="https://doi.org/10.1016/j.fct.2024.114443" target="_blank" rel="noopener">doi:10.1016/j.fct.2024.114443</a></li>
+          </ol>
+
+          <p class="lit-section-label">Polyols &amp; Sugar Alcohols</p>
+          <ol class="lit-list">
+            <li>Mäkinen. <em>Sugar Alcohol Sweeteners as Alternatives to Sugar with Special Consideration of Xylitol.</em> Med. Princ. Pract., 2011. <a href="https://doi.org/10.1159/000324534" target="_blank" rel="noopener">doi:10.1159/000324534</a></li>
+            <li>Uebanso et al. <em>Effects of Consuming Xylitol on Gut Microbiota and Lipid Metabolism in Mice.</em> Nutrients, 2017. <a href="https://doi.org/10.3390/nu9070756" target="_blank" rel="noopener">doi:10.3390/nu9070756</a></li>
+          </ol>
+
+        <p class="disclaimer">This tool is for educational purposes only. It is not medical advice. Consult a healthcare professional for dietary concerns.</p>
+      </div>
+    </div>
+
+    <footer>
+      <p>For educational purposes only. Not intended as medical advice.</p>
+      <p>Data sourced from <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> and other public nutrition databases.</p>
+    </footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const msg = $("msg");
+    let html5Qr = null;
+    let scanning = false;
+
+    const FX_LABELS = {
+      bifido_delta: "Bifidobacterium",
+      lacto_delta: "Lactobacillus",
+      akkermansia_delta: "Akkermansia",
+      diversity_delta: "Microbiome Diversity",
+      scfa_delta: "Short-Chain Fatty Acids",
+    };
+
+    function showMsg(text, ok) {
+      msg.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${ok 
+            ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+            : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+          }
+        </svg>
+        <span>${text}</span>
+      `;
+      msg.className = "status " + (ok ? "ok" : "err");
+    }
+
+    function hideMsg() {
+      msg.className = "status";
+      msg.innerHTML = "";
+    }
+
+    async function lookupBarcode(raw) {
+      const digits = (raw || "").replace(/\D/g, "");
+      if (digits.length < 8) {
+        showMsg("Please enter at least 8 digits.", false);
+        return;
+      }
+      hideMsg();
+      showMsg("Analyzing product...", true);
+      $("btnLookup").disabled = true;
+      try {
+        const res = await fetch("/api/scan/" + encodeURIComponent(digits));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          let det = data.detail;
+          if (Array.isArray(det)) {
+            det = det.map((x) => (typeof x === "string" ? x : x.msg || JSON.stringify(x))).join("; ");
+          }
+          if (det && typeof det === "object") {
+            const msg = det.message || det.error || det.msg;
+            if (msg) {
+              det = String(msg);
+            } else {
+              det = JSON.stringify(det);
+            }
+          }
+          if (det === "Product not found") {
+            $("results").hidden = true;
+            showMsg("Product not found", false);
+            return;
+          }
+          showMsg(det || ("Error " + res.status), false);
+          return;
+        }
+        renderResult(data);
+        showMsg("Analysis complete!", true);
+      } catch (e) {
+        showMsg("Unable to connect. Please check your connection and try again.", false);
+      } finally {
+        $("btnLookup").disabled = false;
+      }
+    }
+
+    function renderResult(data) {
+      const sc = data.score || {};
+      const wb = sc.wellbeing_index_0_100 ?? 0;
+      $("results").hidden = false;
+      $("resName").textContent = data.product_name || "Unknown Product";
+      $("resBrands").textContent = data.brands || "";
+      $("resBarcode").textContent = "Barcode: " + (data.barcode || "");
+      const labs = (data.sources || []).map((s) => s.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()));
+      $("resSources").textContent = labs.length ? "Sources: " + labs.join(", ") : "";
+      const cat = $("resCategory");
+      if (data.category) {
+        cat.hidden = false;
+        cat.textContent = "Category: " + data.category;
+      } else {
+        cat.hidden = true;
+      }
+      const img = $("resImg");
+      if (data.image_url) {
+        img.src = data.image_url;
+        img.hidden = false;
+        img.alt = data.product_name || "Product";
+      } else {
+        img.hidden = true;
+      }
+      $("scoreVal").textContent = String(wb);
+      const ring = $("scoreRing");
+      ring.style.setProperty("--p", Math.max(0, Math.min(100, wb)));
+      // Color based on score
+      if (wb >= 90) {
+        ring.style.setProperty("--color", "var(--accent)");
+      } else if (wb >= 76) {
+        ring.style.setProperty("--color", "var(--warn)");
+      } else if (wb >= 61) {
+        ring.style.setProperty("--color", "#f97316");
+      } else {
+        ring.style.setProperty("--color", "var(--danger)");
+      }
+
+      const warn = $("warnBox");
+      if (data.warning) {
+        warn.hidden = false;
+        $("warnText").textContent = data.warning;
+      } else {
+        warn.hidden = true;
+      }
+
+      const flags = sc.additive_flags || {};
+      const chips = $("chips");
+      chips.innerHTML = "";
+      Object.keys(flags).sort().forEach((k) => {
+        const isDetected = flags[k];
+        if (!isDetected) return;
+        const el = document.createElement("span");
+        el.className = "chip detected";
+        el.textContent = k.replace(/_/g, " ");
+        chips.appendChild(el);
+      });
+      if (!chips.innerHTML) {
+        chips.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None detected</span>';
+      }
+      // Show lexicon keyword hits in yellow - inside reveal box
+      const lexHits = sc.lexicon_keyword_hits || [];
+      const lexContrib = sc.lexicon_contribution || {};
+      const hasNegLex = Object.values(lexContrib).some(v => Number(v) < -0.001);
+      const chipsYellow = $("chipsYellow");
+      chipsYellow.innerHTML = "";
+      if (hasNegLex) {
+        lexHits.forEach((kw) => {
+          const el = document.createElement("span");
+          el.className = "chip detected";
+          el.style.background = "rgba(251, 191, 36, 0.15)";
+          el.style.borderColor = "rgba(251, 191, 36, 0.5)";
+          el.style.color = "#fde68a";
+          el.textContent = kw;
+          chipsYellow.appendChild(el);
+        });
+      }
+      if (!chipsYellow.innerHTML) {
+        chipsYellow.innerHTML = '<span class="chip safe" style="color: var(--text-secondary)">None</span>';
+      }
+
+      const lit = sc.literature_aggregated_effects || {};
+      const fx = $("fxLit");
+      fx.innerHTML = "";
+      Object.keys(FX_LABELS).forEach((k) => {
+        const row = document.createElement("div");
+        row.className = "fx-row";
+        const val = lit[k] != null ? Number(lit[k]) : null;
+        let color = "var(--accent)";
+        if (val != null && val < 0) {
+          if (val <= -1) color = "var(--danger)";
+          else if (val <= -0.5) color = "#f97316";
+          else color = "#fde047";
+        }
+        row.innerHTML = `<span style="color: ${color}">${FX_LABELS[k]}</span>`;
+        fx.appendChild(row);
+      });
+
+      $("resIngr").textContent = data.ingredients_text || "No ingredients listed";
+
+      const by = data.ingredients_by_source || {};
+      const blocks = [];
+      if (by.open_food_facts) {
+        blocks.push("Open Food Facts\n" + by.open_food_facts);
+      }
+      if (by.usda_fdc) {
+        blocks.push("USDA FoodData Central\n" + by.usda_fdc);
+      }
+      if (by.smartlabel) {
+        blocks.push("SmartLabel\n" + by.smartlabel);
+      }
+      const bd = $("srcBreakdown");
+      const pre = $("resIngrBySrc");
+      if (blocks.length > 1) {
+        bd.hidden = false;
+        pre.textContent = blocks.join("\n\n");
+      } else {
+        bd.hidden = true;
+        pre.textContent = "";
+      }
+    }
+
+    $("btnLookup").addEventListener("click", () => lookupBarcode($("barcode").value));
+    $("barcode").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") lookupBarcode($("barcode").value);
+    });
+
+    $("btnStartCam").addEventListener("click", async () => {
+      if (!window.Html5Qrcode) {
+        showMsg("Camera scanner is loading. Please try again.", false);
+        return;
+      }
+      if (scanning) return;
+      const region = { width: 280, height: 160 };
+      html5Qr = new Html5Qrcode("reader");
+      $("btnStartCam").disabled = true;
+      hideMsg();
+      try {
+        await html5Qr.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: region, aspectRatio: 1.777 },
+          (text) => {
+            const d = text.replace(/\D/g, "");
+            if (d.length >= 8) {
+              $("barcode").value = d;
+              lookupBarcode(d);
+              stopCam();
+            }
+          },
+          () => {}
+        );
+        scanning = true;
+        $("btnStopCam").disabled = false;
+      } catch (e) {
+        showMsg("Camera access denied or unavailable.", false);
+        $("btnStartCam").disabled = false;
+      }
+    });
+
+    function stopCam() {
+      if (!html5Qr || !scanning) {
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+        return;
+      }
+      $("btnStopCam").disabled = true;
+      html5Qr.stop().then(() => {
+        scanning = false;
+        html5Qr.clear();
+        html5Qr = null;
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+      }).catch(() => {
+        $("btnStartCam").disabled = false;
+        $("btnStopCam").disabled = true;
+      });
+    }
+
+    $("btnStopCam").addEventListener("click", stopCam);
+    window.addEventListener("load", hideMsg);
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const target = tab.dataset.tab;
+        $("paneScanner").hidden = target !== "scanner";
+        $("paneAbout").hidden = target !== "about";
+      });
+    });
+  </script>
+</body>
+</html>

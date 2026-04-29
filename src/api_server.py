@@ -202,7 +202,6 @@ def index() -> FileResponse:
         raise HTTPException(status_code=500, detail="web/index.html missing")
     return FileResponse(index_path)
 
-
 if __name__ == "__main__":
     import uvicorn
 

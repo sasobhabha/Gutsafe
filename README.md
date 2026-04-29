@@ -75,4 +75,4 @@ curl http://localhost:8000/api/scan/049000025010  # Coca-Cola
 
 ## License
 
-For educational purposes only. Not medical advice.
+For educational purposes only. Not medical advice. Not to be copied, cloned, or modified without written permission from Shashwath Manjunath.

@@ -14,7 +14,7 @@ A full-stack application that analyzes food barcodes to assess gut health impact
 
 ### Frontend (Website)
 1. New → Static Site
-2. Connect repo: `ShashwathM/Gutsafe`
+2. Connect repo: `sasobhabha/Gutsafe`
 3. Publish Directory: `./web`
 
 Your app is live! 🎉

@@ -6,7 +6,7 @@ A full-stack application that analyzes food barcodes to assess gut health impact
 
 ### Backend (API)
 1. Go to [Render](https://render.com) → New → Web Service
-2. Connect repo: `ShashwathM/Gutsafe`
+2. Connect repo: `sasobhabha/Gutsafe`
 3. Configure:
    - Name: `gutsafe-api`
    - Start Command: `uvicorn api_server:app --host 0.0.0.0 --port $PORT`
